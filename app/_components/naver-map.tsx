@@ -1,6 +1,13 @@
 "use client";
 
-import { Component, createElement, memo, type ComponentProps, type ReactNode, useMemo } from "react";
+import {
+  Component,
+  createElement,
+  memo,
+  type ComponentProps,
+  type ReactNode,
+  useMemo,
+} from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MapPinned } from "lucide-react";
 import {
@@ -33,10 +40,19 @@ function MapStatusCard({ title, description, code }: MapStatusCardProps) {
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-[radial-gradient(circle_at_50%_38%,#f8fbff_0,#e9f0f7_48%,#dbe5ef_100%)] p-6">
       <div className="max-w-sm rounded-[1.75rem] border border-white/80 bg-white/90 p-7 text-center shadow-[0_20px_70px_-35px_rgba(20,32,51,0.45)] backdrop-blur">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e9f1ff] text-2xl" aria-hidden="true">
-          <MapPinned aria-hidden="true" className="h-7 w-7 text-[#2f6fed]" strokeWidth={1.7} />
+        <div
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e9f1ff] text-2xl"
+          aria-hidden="true"
+        >
+          <MapPinned
+            aria-hidden="true"
+            className="h-7 w-7 text-[#2f6fed]"
+            strokeWidth={1.7}
+          />
         </div>
-        <h2 className="mt-5 text-lg font-bold tracking-[-0.04em] text-slate-900">{title}</h2>
+        <h2 className="mt-5 text-lg font-bold tracking-[-0.04em] text-slate-900">
+          {title}
+        </h2>
         <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>
         {code ? (
           <code className="mt-5 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
@@ -56,7 +72,10 @@ type MapErrorBoundaryState = {
   hasError: boolean;
 };
 
-class MapErrorBoundary extends Component<MapErrorBoundaryProps, MapErrorBoundaryState> {
+class MapErrorBoundary extends Component<
+  MapErrorBoundaryProps,
+  MapErrorBoundaryState
+> {
   state: MapErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): MapErrorBoundaryState {
@@ -80,19 +99,36 @@ class MapErrorBoundary extends Component<MapErrorBoundaryProps, MapErrorBoundary
 function markerPalette(category: string) {
   const normalizedCategory = category.toLocaleLowerCase("ko-KR");
 
-  if (normalizedCategory.includes("카페") || normalizedCategory.includes("베이커리")) {
+  if (
+    normalizedCategory.includes("카페") ||
+    normalizedCategory.includes("베이커리")
+  ) {
     return { fill: "#f5eadb", accent: "#a26732" };
   }
-  if (normalizedCategory.includes("한식") || normalizedCategory.includes("국수")) {
+  if (
+    normalizedCategory.includes("한식") ||
+    normalizedCategory.includes("국수")
+  ) {
     return { fill: "#e5efff", accent: "#5077bd" };
   }
-  if (normalizedCategory.includes("일식") || normalizedCategory.includes("초밥") || normalizedCategory.includes("스시")) {
+  if (
+    normalizedCategory.includes("일식") ||
+    normalizedCategory.includes("초밥") ||
+    normalizedCategory.includes("스시")
+  ) {
     return { fill: "#ffe8eb", accent: "#c85e6d" };
   }
-  if (normalizedCategory.includes("중식") || normalizedCategory.includes("딤섬")) {
+  if (
+    normalizedCategory.includes("중식") ||
+    normalizedCategory.includes("딤섬")
+  ) {
     return { fill: "#f0e7ff", accent: "#7958b2" };
   }
-  if (normalizedCategory.includes("술집") || normalizedCategory.includes("바(") || normalizedCategory.includes("bar")) {
+  if (
+    normalizedCategory.includes("술집") ||
+    normalizedCategory.includes("바(") ||
+    normalizedCategory.includes("bar")
+  ) {
     return { fill: "#e1f5ed", accent: "#368467" };
   }
 
@@ -157,7 +193,8 @@ const MappableMarker = memo(function MappableMarker({
   isSelected: boolean;
   onSelect: (id: string) => void;
 }) {
-  if (restaurant.latitude === null || restaurant.longitude === null) return null;
+  if (restaurant.latitude === null || restaurant.longitude === null)
+    return null;
 
   return (
     <Marker
@@ -173,29 +210,49 @@ const MappableMarker = memo(function MappableMarker({
 function MapContent({ restaurants, selectedId, onSelect }: NaverMapProps) {
   const navermaps = useNavermaps();
   const mappableRestaurants = useMemo(
-    () => restaurants.filter((restaurant) => restaurant.latitude !== null && restaurant.longitude !== null),
+    () =>
+      restaurants.filter(
+        (restaurant) =>
+          restaurant.latitude !== null && restaurant.longitude !== null,
+      ),
     [restaurants],
   );
   const selectedRestaurant = useMemo(
-    () => mappableRestaurants.find((restaurant) => restaurant.id === selectedId) ?? null,
+    () =>
+      mappableRestaurants.find((restaurant) => restaurant.id === selectedId) ??
+      null,
     [mappableRestaurants, selectedId],
   );
-  const focusedRestaurant = selectedRestaurant ?? (mappableRestaurants.length === 1 ? mappableRestaurants[0] : null);
+  const focusedRestaurant =
+    selectedRestaurant ??
+    (mappableRestaurants.length === 1 ? mappableRestaurants[0] : null);
   const bounds = useMemo(() => {
     if (focusedRestaurant || mappableRestaurants.length < 2) return undefined;
 
     const firstRestaurant = mappableRestaurants[0];
-    const firstPosition = new navermaps.LatLng(firstRestaurant.latitude!, firstRestaurant.longitude!);
+    const firstPosition = new navermaps.LatLng(
+      firstRestaurant.latitude!,
+      firstRestaurant.longitude!,
+    );
     const nextBounds = new navermaps.LatLngBounds(firstPosition, firstPosition);
     mappableRestaurants.forEach((restaurant) => {
-      nextBounds.extend(new navermaps.LatLng(restaurant.latitude!, restaurant.longitude!));
+      nextBounds.extend(
+        new navermaps.LatLng(restaurant.latitude!, restaurant.longitude!),
+      );
     });
     return nextBounds;
   }, [focusedRestaurant, mappableRestaurants, navermaps]);
 
   return (
     <ReactNaverMap
-      center={focusedRestaurant ? { lat: focusedRestaurant.latitude!, lng: focusedRestaurant.longitude! } : undefined}
+      center={
+        focusedRestaurant
+          ? {
+              lat: focusedRestaurant.latitude!,
+              lng: focusedRestaurant.longitude!,
+            }
+          : undefined
+      }
       bounds={bounds}
       defaultCenter={SEOUL_CENTER}
       defaultZoom={11}
@@ -217,7 +274,8 @@ function MapContent({ restaurants, selectedId, onSelect }: NaverMapProps) {
 export function NaverMap({ restaurants, selectedId, onSelect }: NaverMapProps) {
   const mapClientId = getNaverMapClientId();
   const mappableCount = restaurants.filter(
-    (restaurant) => restaurant.latitude !== null && restaurant.longitude !== null,
+    (restaurant) =>
+      restaurant.latitude !== null && restaurant.longitude !== null,
   ).length;
 
   return (
@@ -235,7 +293,11 @@ export function NaverMap({ restaurants, selectedId, onSelect }: NaverMapProps) {
               }
               style={{ height: "100%", width: "100%" }}
             >
-              <MapContent onSelect={onSelect} restaurants={restaurants} selectedId={selectedId} />
+              <MapContent
+                onSelect={onSelect}
+                restaurants={restaurants}
+                selectedId={selectedId}
+              />
             </Container>
           </NavermapsProvider>
         </MapErrorBoundary>
@@ -247,7 +309,7 @@ export function NaverMap({ restaurants, selectedId, onSelect }: NaverMapProps) {
         />
       )}
 
-      <div className="pointer-events-none absolute left-4 top-4 z-30 rounded-full border border-white/80 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute right-4 top-4 z-30 rounded-full border border-white/80 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm backdrop-blur">
         {mappableCount}곳 표시 중
       </div>
 

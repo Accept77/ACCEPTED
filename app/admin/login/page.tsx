@@ -31,7 +31,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#142033] text-white">
             <MapPinned aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
           </span>
-          <span className="text-sm font-bold text-slate-900">내 맛집 지도</span>
+          <span className="text-sm font-bold text-slate-900">ACCEPTED</span>
         </Link>
 
         <section className="mt-10 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-[0_18px_55px_-35px_rgba(20,32,51,0.45)] sm:p-8">

@@ -10,4 +10,4 @@ export const RESTAURANT_CATEGORIES = [
 ] as const;
 
 export const STORAGE_BUCKET = "restaurant-images";
-export const SITE_TITLE = "내 맛집 지도";
+export const SITE_TITLE = "ACCEPTED";
