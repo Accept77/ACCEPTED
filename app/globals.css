@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f7f9;
+  --foreground: #142033;
+  --muted: #687386;
+  --line: #e4e8ee;
+  --navy: #142033;
+  --blue: #2f6fed;
 }
 
 @theme inline {
@@ -12,15 +16,90 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: #cfe0ff;
+  color: var(--navy);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(47 111 237 / 25%);
+  outline-offset: 2px;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@keyframes slot-reel {
+  0%,
+  100% {
+    filter: blur(1px);
+    opacity: 0.58;
+    transform: translateY(-3px) scale(0.985);
+  }
+
+  45% {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(3px) scale(1);
+  }
+}
+
+@keyframes slot-reel-icon {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slot-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.slot-reel {
+  animation: slot-reel 560ms ease-in-out infinite;
+}
+
+.slot-reel-icon {
+  animation: slot-reel-icon 700ms linear infinite;
+}
+
+.slot-reveal {
+  animation: slot-reveal 320ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-reel,
+  .slot-reel-icon,
+  .slot-reveal {
+    animation: none;
+  }
 }

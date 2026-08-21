@@ -1,0 +1,174 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { MapPinned, UtensilsCrossed } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+
+import { deleteRestaurant, setRestaurantVisibility } from "@/app/actions/restaurants";
+import { signOutAdmin } from "@/app/actions/auth";
+import type { Restaurant } from "@/lib/types";
+
+function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+
+  function handleVisibility() {
+    setError("");
+    startTransition(async () => {
+      try {
+        await setRestaurantVisibility(restaurant.id, !restaurant.isVisible);
+        router.refresh();
+      } catch (actionError) {
+        setError(actionError instanceof Error ? actionError.message : "상태 변경에 실패했습니다.");
+      }
+    });
+  }
+
+  function handleDelete() {
+    if (!window.confirm(`“${restaurant.name}”을 삭제할까요?`)) return;
+
+    setError("");
+    startTransition(async () => {
+      try {
+        await deleteRestaurant(restaurant.id);
+        router.refresh();
+      } catch (actionError) {
+        setError(actionError instanceof Error ? actionError.message : "삭제에 실패했습니다.");
+      }
+    });
+  }
+
+  return (
+    <article className={`grid grid-cols-[56px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-slate-100 p-3 last:border-b-0 sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center ${isPending ? "opacity-60" : ""}`}>
+      <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-[#edf3ff]">
+        {restaurant.imageUrl ? (
+          <Image alt="" className="object-cover" fill sizes="56px" src={restaurant.imageUrl} />
+        ) : (
+          <div className="flex h-full items-center justify-center text-xl" aria-hidden="true">
+            <UtensilsCrossed className="h-6 w-6 text-slate-500" strokeWidth={1.8} />
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0 self-center">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="truncate text-sm font-bold text-slate-900">{restaurant.name}</h2>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${restaurant.isVisible ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}>
+            {restaurant.isVisible ? "공개" : "숨김"}
+          </span>
+          {!restaurant.imageUrl ? <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-bold text-amber-600">사진 보완</span> : null}
+        </div>
+        <p className="mt-1 truncate text-xs text-slate-400">
+          {restaurant.category} · {restaurant.area || "지역 미지정"} · {restaurant.address}
+        </p>
+        {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : null}
+      </div>
+
+      <div className="col-start-2 flex flex-wrap justify-start gap-1.5 sm:col-start-auto sm:justify-end">
+        <button
+          className="h-8 rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed"
+          disabled={isPending}
+          onClick={handleVisibility}
+          type="button"
+        >
+          {restaurant.isVisible ? "숨기기" : "공개"}
+        </button>
+        <Link className="flex h-8 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300" href={`/admin/${restaurant.id}`}>
+          수정
+        </Link>
+        <button
+          className="h-8 rounded-lg border border-rose-100 px-2.5 text-[0.68rem] font-bold text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-not-allowed"
+          disabled={isPending}
+          onClick={handleDelete}
+          type="button"
+        >
+          삭제
+        </button>
+      </div>
+    </article>
+  );
+}
+
+export function AdminDashboard({ restaurants, email }: { restaurants: Restaurant[]; email: string }) {
+  const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const visibleCount = restaurants.filter((restaurant) => restaurant.isVisible).length;
+  const missingImageCount = restaurants.filter((restaurant) => !restaurant.imageUrl).length;
+
+  async function handleSignOut() {
+    setIsSigningOut(true);
+    try {
+      await signOutAdmin();
+    } finally {
+      setIsSigningOut(false);
+      router.refresh();
+    }
+  }
+
+  return (
+    <main className="h-[100dvh] w-[100dvw] overflow-hidden bg-[#eef2f5]">
+      <div className="flex h-full flex-col">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-3 sm:px-5">
+          <div className="min-w-0">
+            <p className="text-sm font-bold tracking-[-0.03em] text-slate-900">맛집 관리</p>
+            <p className="max-w-[42vw] truncate text-[0.68rem] text-slate-400">{email}</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Link className="flex h-9 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300" href="/" target="_blank">
+              공개 페이지
+            </Link>
+            <button
+              className="h-9 rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-500 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-50"
+              disabled={isSigningOut}
+              onClick={handleSignOut}
+              type="button"
+            >
+              로그아웃
+            </button>
+          </div>
+        </header>
+
+        <div className="min-h-0 flex-1 p-2.5 sm:p-4">
+          <section className="flex h-full min-h-0 flex-col overflow-hidden border border-slate-200/80 bg-white">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-3 py-3 sm:px-4">
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-bold tracking-[-0.04em] text-slate-900">
+                  등록된 맛집 <span className="text-[#2f6fed]">{restaurants.length}</span>곳
+                </h1>
+                <p className="mt-1 text-[0.68rem] text-slate-400">
+                  공개 {visibleCount} · 숨김 {restaurants.length - visibleCount} · 사진 보완 {missingImageCount}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Link className="flex h-9 items-center rounded-lg border border-[#dce8ff] bg-[#f7faff] px-2.5 text-[0.68rem] font-bold text-[#2f6fed] transition hover:border-[#b8cffb]" href="/admin/import">
+                  네이버 리스트 가져오기
+                </Link>
+                <Link className="flex h-9 items-center rounded-lg bg-[#2f6fed] px-3 text-[0.68rem] font-bold text-white transition hover:bg-[#255ac8]" href="/admin/new">
+                  + 맛집 등록
+                </Link>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {restaurants.length > 0 ? (
+                restaurants.map((restaurant) => <AdminPlaceRow key={restaurant.id} restaurant={restaurant} />)
+              ) : (
+                <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
+                  <MapPinned aria-hidden="true" className="h-9 w-9 text-[#2f6fed]" strokeWidth={1.7} />
+                  <h2 className="mt-3 text-sm font-bold text-slate-800">아직 등록한 맛집이 없어요</h2>
+                  <p className="mt-2 text-xs text-slate-500">첫 번째 장소를 등록해 공개 페이지를 채워 보세요.</p>
+                  <Link className="mt-4 flex h-9 items-center rounded-lg bg-[#edf3ff] px-3 text-xs font-bold text-[#2f6fed]" href="/admin/new">
+                    첫 맛집 등록하기
+                  </Link>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
