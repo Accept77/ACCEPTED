@@ -526,7 +526,7 @@ export function RestaurantForm({
               <p className="text-sm font-bold text-slate-800">네이버 장소 등록 사진</p>
               <p className="mt-1 text-xs leading-5 text-slate-400">저장 리스트에서 가져온 공식 사진 후보입니다.</p>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-3 sm:max-w-md">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:max-w-md sm:grid-cols-3">
               {form.imageCandidates.map((candidate, index) => {
                 const isSelected = selectedOfficialImages.includes(candidate);
 

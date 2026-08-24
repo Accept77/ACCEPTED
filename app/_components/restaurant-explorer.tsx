@@ -6,6 +6,7 @@ import { createElement, useCallback, useEffect, useId, useMemo, useRef, useState
 
 import { NaverMap } from "@/app/_components/naver-map";
 import { categoryIcon } from "@/lib/category-display";
+import { getLocationHierarchy } from "@/lib/locations";
 import type { Restaurant } from "@/lib/types";
 
 type RestaurantExplorerProps = {
@@ -17,6 +18,14 @@ const placeholderStyles = [
   "linear-gradient(135deg, #e9e1f4 0%, #d8edf0 100%)",
   "linear-gradient(135deg, #f5e3c9 0%, #e2edf8 100%)",
 ];
+const ALL_REGION = "전체 지역";
+const ALL_DISTRICTS = "전체 구/군";
+const ALL_TAGS = "전체 분류";
+
+function restaurantLocationLabel(restaurant: Pick<Restaurant, "address" | "area">) {
+  const location = getLocationHierarchy(restaurant.address, restaurant.area);
+  return [location.region, location.district].filter(Boolean).join(" · ");
+}
 
 function RestaurantCategoryIcon({ category, className }: { category: string; className: string }) {
   return createElement(categoryIcon(category), { "aria-hidden": "true", className, strokeWidth: 1.8 });
@@ -107,6 +116,8 @@ function RestaurantListItem({
   onOpen: (restaurant: Restaurant) => void;
   onSelect: (id: string) => void;
 }) {
+  const locationLabel = restaurantLocationLabel(restaurant);
+
   return (
     <article
       data-restaurant-id={restaurant.id}
@@ -143,8 +154,8 @@ function RestaurantListItem({
         <div className="min-w-0 flex-1 py-0.5">
           <div className="flex items-center gap-2 text-[0.68rem] font-bold text-[#2f6fed]">
             <span>{restaurant.category}</span>
-            {restaurant.area ? <span className="text-slate-300">·</span> : null}
-            <span className="truncate text-slate-400">{restaurant.area || "지역 미지정"}</span>
+            {locationLabel ? <span className="text-slate-300">·</span> : null}
+            <span className="truncate text-slate-400">{locationLabel || "지역 미지정"}</span>
           </div>
           <h2 className="mt-1 truncate text-[0.98rem] font-bold tracking-[-0.03em] text-slate-900">
             {restaurant.name}
@@ -162,7 +173,7 @@ function RestaurantListItem({
           ))}
         </div>
         <button
-          className="shrink-0 text-xs font-bold text-[#2f6fed] transition hover:text-[#1f55bd]"
+          className="min-h-11 lg:min-h-0 shrink-0 px-1 text-xs font-bold text-[#2f6fed] transition hover:text-[#1f55bd]"
           onClick={() => onOpen(restaurant)}
           type="button"
         >
@@ -180,6 +191,7 @@ function RestaurantDetail({
   restaurant: Restaurant;
   onClose: () => void;
 }) {
+  const locationLabel = restaurantLocationLabel(restaurant);
   const isOfficialGallery = restaurant.imageCredit === "네이버 장소 등록 이미지" && restaurant.imageCandidates.length > 0;
   const galleryImages = isOfficialGallery
     ? restaurant.imageCandidates.slice(0, 3)
@@ -230,7 +242,7 @@ function RestaurantDetail({
           )}
           <button
             aria-label="상세 정보 닫기"
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white"
+            className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white lg:h-10 lg:w-10"
             onClick={onClose}
             type="button"
           >
@@ -241,7 +253,7 @@ function RestaurantDetail({
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#2f6fed]">
             <span>{restaurant.category}</span>
-            {restaurant.area ? <span>· {restaurant.area}</span> : null}
+            {locationLabel ? <span>· {locationLabel}</span> : null}
           </div>
           <h2 className="mt-3 text-3xl font-bold tracking-[-0.06em] text-slate-900">{restaurant.name}</h2>
           {restaurant.memo ? (
@@ -292,8 +304,9 @@ function RestaurantDetail({
 
 export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
   const [search, setSearch] = useState("");
-  const [area, setArea] = useState("전체 지역");
-  const [tag, setTag] = useState("전체 분류");
+  const [region, setRegion] = useState(ALL_REGION);
+  const [district, setDistrict] = useState(ALL_DISTRICTS);
+  const [tag, setTag] = useState(ALL_TAGS);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isRandomPicksOpen, setIsRandomPicksOpen] = useState(false);
   const [isDrawingRandom, setIsDrawingRandom] = useState(false);
@@ -303,10 +316,29 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
   const restaurantListRef = useRef<HTMLDivElement>(null);
   const tagSeed = useId();
 
-  const areas = useMemo(
-    () => Array.from(new Set(restaurants.map((restaurant) => restaurant.area).filter(Boolean))).sort(),
+  const regions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          restaurants
+            .map((restaurant) => getLocationHierarchy(restaurant.address, restaurant.area).region)
+            .filter(Boolean),
+        ),
+      ).sort((left, right) => left.localeCompare(right, "ko-KR")),
     [restaurants],
   );
+  const districts = useMemo(() => {
+    if (region === ALL_REGION) return [];
+
+    return Array.from(
+      new Set(
+        restaurants
+          .filter((restaurant) => getLocationHierarchy(restaurant.address, restaurant.area).region === region)
+          .map((restaurant) => getLocationHierarchy(restaurant.address, restaurant.area).district)
+          .filter(Boolean),
+      ),
+    ).sort((left, right) => left.localeCompare(right, "ko-KR"));
+  }, [region, restaurants]);
   const tags = useMemo(
     () => Array.from(new Set(restaurants.flatMap((restaurant) => restaurant.tags))).sort(),
     [restaurants],
@@ -317,10 +349,13 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
     const normalizedSearch = search.trim().toLocaleLowerCase("ko-KR");
 
     return restaurants.filter((restaurant) => {
+      const location = getLocationHierarchy(restaurant.address, restaurant.area);
       const searchableText = [
         restaurant.name,
         restaurant.category,
         restaurant.area,
+        location.region,
+        location.district,
         restaurant.address,
         restaurant.memo,
         ...restaurant.tags,
@@ -330,15 +365,16 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
 
       return (
         (!normalizedSearch || searchableText.includes(normalizedSearch)) &&
-        (area === "전체 지역" || restaurant.area === area) &&
-        (tag === "전체 분류" || restaurant.tags.includes(tag))
+        (region === ALL_REGION || location.region === region) &&
+        (district === ALL_DISTRICTS || location.district === district) &&
+        (tag === ALL_TAGS || restaurant.tags.includes(tag))
       );
     });
-  }, [area, restaurants, search, tag]);
+  }, [district, region, restaurants, search, tag]);
 
   const randomRestaurants = useMemo(
-    () => shuffle(filteredRestaurants, `${tagSeed}-${randomSeed}-${search}-${area}-${tag}`).slice(0, 5),
-    [area, filteredRestaurants, randomSeed, search, tag, tagSeed],
+    () => shuffle(filteredRestaurants, `${tagSeed}-${randomSeed}-${search}-${region}-${district}-${tag}`).slice(0, 5),
+    [district, filteredRestaurants, randomSeed, region, search, tag, tagSeed],
   );
 
   useEffect(() => {
@@ -375,8 +411,9 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
 
   function resetFilters() {
     setSearch("");
-    setArea("전체 지역");
-    setTag("전체 분류");
+    setRegion(ALL_REGION);
+    setDistrict(ALL_DISTRICTS);
+    setTag(ALL_TAGS);
   }
 
   function drawRandomPicks() {
@@ -392,8 +429,9 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
 
   const activeFilterCount = [
     search.trim(),
-    area !== "전체 지역" ? area : "",
-    tag !== "전체 분류" ? tag : "",
+    region !== ALL_REGION ? region : "",
+    district !== ALL_DISTRICTS ? district : "",
+    tag !== ALL_TAGS ? tag : "",
   ].filter(Boolean).length;
   const selectedIdForView =
     activeRestaurantId && filteredRestaurants.some((restaurant) => restaurant.id === activeRestaurantId)
@@ -433,7 +471,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                 />
                 {search ? (
                   <button
-                    className="text-xs font-bold text-slate-400 hover:text-slate-700"
+                    className="min-h-11 px-1 text-xs font-bold text-slate-400 hover:text-slate-700 lg:min-h-0"
                     onClick={() => setSearch("")}
                     type="button"
                   >
@@ -443,43 +481,81 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
               </label>
 
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400">
+                <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400 lg:min-h-0">
                   지역
                   <select
-                    className="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-700 outline-none"
-                    onChange={(event) => setArea(event.target.value)}
-                    value={area}
+                    className="min-w-0 flex-1 truncate bg-transparent text-xs font-bold text-slate-700 outline-none"
+                    onChange={(event) => {
+                      setRegion(event.target.value);
+                      setDistrict(ALL_DISTRICTS);
+                    }}
+                    value={region}
                   >
-                    <option>전체 지역</option>
-                    {areas.map((item) => (
-                      <option key={item}>{item}</option>
+                    <option value={ALL_REGION}>{ALL_REGION}</option>
+                    {regions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
                 </label>
-                <label className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400">
-                  분류
+                <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400 lg:min-h-0">
+                  세부 지역
                   <select
-                    className="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-700 outline-none"
-                    onChange={(event) => setTag(event.target.value)}
-                    value={tag}
+                    className="min-w-0 flex-1 truncate bg-transparent text-xs font-bold text-slate-700 outline-none disabled:cursor-not-allowed disabled:text-slate-400"
+                    disabled={region === ALL_REGION || districts.length === 0}
+                    onChange={(event) => setDistrict(event.target.value)}
+                    value={district}
                   >
-                    <option>전체 분류</option>
-                    {visibleTags.map((item) => (
-                      <option key={item}>{item}</option>
+                    <option value={ALL_DISTRICTS}>
+                      {region === ALL_REGION ? "지역을 먼저 선택" : ALL_DISTRICTS}
+                    </option>
+                    {districts.map((item) => (
+                      <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
                 </label>
               </div>
 
+              <label className="mt-2 flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400 lg:min-h-0">
+                분류
+                <select
+                  className="min-w-0 flex-1 truncate bg-transparent text-xs font-bold text-slate-700 outline-none"
+                  onChange={(event) => setTag(event.target.value)}
+                  value={tag}
+                >
+                  <option value={ALL_TAGS}>{ALL_TAGS}</option>
+                  {visibleTags.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+
+              {region !== ALL_REGION && districts.length > 0 ? (
+                <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="선택한 지역의 세부 지역">
+                  {districts.slice(0, 8).map((item) => (
+                    <button
+                      aria-pressed={district === item}
+                      className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                        district === item ? "bg-[#e3edff] text-[#2f6fed]" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      }`}
+                      key={item}
+                      onClick={() => setDistrict(district === item ? ALL_DISTRICTS : item)}
+                      type="button"
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
               {tags.length > 0 ? (
                 <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {visibleTags.slice(0, 8).map((item) => (
                     <button
-                      className={`shrink-0 rounded-full px-2.5 py-1.5 text-[0.66rem] font-semibold transition ${
+                      className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
                         tag === item ? "bg-[#e3edff] text-[#2f6fed]" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                       }`}
                       key={item}
-                      onClick={() => setTag(tag === item ? "전체 분류" : item)}
+                      onClick={() => setTag(tag === item ? ALL_TAGS : item)}
                       type="button"
                     >
                       #{item}
@@ -490,13 +566,13 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
           </div>
 
           <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-3 py-2 sm:px-4">
-            <p className="text-sm font-bold text-slate-800">
+            <p className="min-w-0 text-sm font-bold text-slate-800">
               맛집 <span className="text-[#2f6fed]">{filteredRestaurants.length}</span>
               {activeFilterCount > 0 ? <span className="ml-1 text-xs font-semibold text-slate-400">필터 적용 중</span> : null}
             </p>
             <div className="flex items-center gap-2">
               <button
-                className={`rounded-full px-2.5 py-1.5 text-[0.68rem] font-bold transition ${
+                className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.68rem] font-bold transition ${
                   isRandomPicksOpen ? "bg-[#2f6fed] text-white" : "bg-[#edf3ff] text-[#2f6fed] hover:bg-[#dfeaff]"
                 } disabled:cursor-wait disabled:opacity-60`}
                 disabled={isDrawingRandom}
@@ -506,7 +582,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                 랜덤 5개
               </button>
               {activeFilterCount > 0 ? (
-                <button className="text-xs font-bold text-slate-400 hover:text-slate-800" onClick={resetFilters} type="button">
+                <button className="min-h-11 shrink-0 px-1 text-xs font-bold text-slate-400 hover:text-slate-800 lg:min-h-0" onClick={resetFilters} type="button">
                   초기화
                 </button>
               ) : null}
@@ -520,7 +596,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
               className="shrink-0 border-b border-[#dce8ff] bg-[#f7faff] px-3 py-3 sm:px-4"
             >
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-black tracking-[-0.02em] text-slate-800">
                     {isDrawingRandom ? "랜덤 슬롯을 돌리는 중..." : "필터 결과 랜덤 추천"}
                   </p>
@@ -528,16 +604,16 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                     {isDrawingRandom ? "잠시만 기다리면 오늘의 맛집이 나와요." : "현재 조건에서 최대 5곳을 골랐어요."}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
-                    className="text-[0.68rem] font-bold text-[#2f6fed] hover:text-[#255ac8] disabled:cursor-wait disabled:opacity-50"
+                    className="min-h-11 px-1 text-[0.68rem] font-bold text-[#2f6fed] hover:text-[#255ac8] disabled:cursor-wait disabled:opacity-50 lg:min-h-0"
                     disabled={isDrawingRandom}
                     onClick={drawRandomPicks}
                     type="button"
                   >
                     다시 뽑기
                   </button>
-                  <button className="text-[0.68rem] font-bold text-slate-400 hover:text-slate-700" onClick={() => setIsRandomPicksOpen(false)} type="button">
+                  <button className="min-h-11 px-1 text-[0.68rem] font-bold text-slate-400 hover:text-slate-700 lg:min-h-0" onClick={() => setIsRandomPicksOpen(false)} type="button">
                     닫기
                   </button>
                 </div>
@@ -547,7 +623,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                 <div className="mt-2 grid grid-cols-2 gap-1.5" aria-live="polite">
                   {Array.from({ length: Math.min(5, filteredRestaurants.length) }, (_, index) => (
                     <div
-                      className="slot-reel flex min-w-0 items-center gap-2 rounded-xl border border-[#e2eaff] bg-white px-2.5 py-2"
+                      className="slot-reel flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-[#e2eaff] bg-white px-2.5 py-2 lg:min-h-0"
                       key={`slot-${index}`}
                       style={{ animationDelay: `${index * 65}ms` }}
                     >
@@ -565,7 +641,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
                   {randomRestaurants.map((restaurant, index) => (
                     <button
-                      className="slot-reveal flex min-w-0 items-center gap-2 rounded-xl border border-[#e2eaff] bg-white px-2.5 py-2 text-left transition hover:-translate-y-0.5 hover:border-[#9db9f5] hover:shadow-sm"
+                      className="slot-reveal flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-[#e2eaff] bg-white px-2.5 py-2 text-left transition hover:-translate-y-0.5 hover:border-[#9db9f5] hover:shadow-sm lg:min-h-0"
                       key={restaurant.id}
                       onClick={() => selectRestaurant(restaurant.id)}
                       style={{ animationDelay: `${index * 55}ms` }}
@@ -576,7 +652,9 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-[0.7rem] font-bold text-slate-800">{index + 1}. {restaurant.name}</span>
-                        <span className="mt-0.5 block truncate text-[0.6rem] text-slate-400">{restaurant.area || restaurant.category}</span>
+                        <span className="mt-0.5 block truncate text-[0.6rem] text-slate-400">
+                          {restaurantLocationLabel(restaurant) || restaurant.category}
+                        </span>
                       </span>
                     </button>
                   ))}
@@ -587,7 +665,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
             </section>
           ) : null}
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-2.5 sm:p-3" ref={restaurantListRef}>
+          <div className="safe-area-bottom-preserving min-h-0 flex-1 overflow-y-auto p-2.5 sm:p-3" ref={restaurantListRef}>
             {filteredRestaurants.length > 0 ? (
               <div className="space-y-2">
                 {filteredRestaurants.map((restaurant, index) => (
@@ -607,7 +685,7 @@ export function RestaurantExplorer({ restaurants }: RestaurantExplorerProps) {
                 <h2 className="mt-4 text-sm font-bold text-slate-800">조건에 맞는 맛집이 없어요</h2>
                 <p className="mt-2 text-xs leading-5 text-slate-500">검색어나 필터를 조금 바꿔 다시 찾아보세요.</p>
                 <button
-                  className="mt-4 rounded-full bg-[#edf3ff] px-3.5 py-2 text-xs font-bold text-[#2f6fed] transition hover:bg-[#dfeaff]"
+                  className="mt-4 min-h-11 rounded-full bg-[#edf3ff] px-3.5 py-2 text-xs font-bold text-[#2f6fed] transition hover:bg-[#dfeaff] lg:min-h-0"
                   onClick={resetFilters}
                   type="button"
                 >

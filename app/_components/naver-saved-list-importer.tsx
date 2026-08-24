@@ -180,15 +180,15 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
               <p className="truncate text-[0.68rem] text-slate-400">공유 리스트의 장소를 한 번에 등록합니다.</p>
             </div>
           </div>
-          <Link className="flex h-9 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300" href="/admin/new">
+          <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 lg:h-9" href="/admin/new">
             직접 등록
           </Link>
         </header>
 
         <div className="min-h-0 flex-1 p-2.5 sm:p-4">
           <section className="flex h-full min-h-0 flex-col overflow-hidden border border-slate-200/80 bg-white">
-            <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(280px,0.38fr)_minmax(0,1fr)]">
-              <div className="border-b border-slate-100 p-4 sm:p-5 lg:border-b-0 lg:border-r">
+            <div className="flex min-h-0 flex-1 flex-col gap-0 lg:grid lg:grid-cols-[minmax(280px,0.38fr)_minmax(0,1fr)]">
+              <div className="min-h-0 overflow-y-auto border-b border-slate-100 p-4 sm:p-5 lg:overflow-visible lg:border-b-0 lg:border-r">
                 <p className="text-[0.62rem] font-black tracking-[0.2em] text-[#2f6fed]">STEP 1</p>
                 <h1 className="mt-2 text-lg font-bold tracking-[-0.04em] text-slate-900">공유 링크 붙여넣기</h1>
                 <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -232,7 +232,7 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
                 ) : null}
               </div>
 
-              <div className="flex min-h-0 flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="shrink-0 border-b border-slate-100 p-4 sm:p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
@@ -252,7 +252,7 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
                     <div className="flex flex-wrap justify-end gap-2">
                       {duplicateCount > 0 ? (
                         <button
-                          className="h-10 shrink-0 rounded-xl border border-[#cbdafa] bg-[#f7faff] px-3 text-[0.68rem] font-bold text-[#2f6fed] transition hover:border-[#9db9f5] hover:bg-[#edf3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="h-11 shrink-0 whitespace-nowrap rounded-xl border border-[#cbdafa] bg-[#f7faff] px-3 text-[0.68rem] font-bold text-[#2f6fed] transition hover:border-[#9db9f5] hover:bg-[#edf3ff] disabled:cursor-not-allowed disabled:opacity-50 lg:h-10"
                           disabled={isSaving || isRefreshingPhotos}
                           onClick={() => void refreshExistingPhotos()}
                           type="button"
@@ -261,7 +261,7 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
                         </button>
                       ) : null}
                       <button
-                        className="h-10 shrink-0 rounded-xl bg-[#2f6fed] px-3.5 text-xs font-bold text-white transition hover:bg-[#255ac8] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-11 shrink-0 whitespace-nowrap rounded-xl bg-[#2f6fed] px-3.5 text-xs font-bold text-white transition hover:bg-[#255ac8] disabled:cursor-not-allowed disabled:opacity-50 lg:h-10"
                         disabled={isSaving || isRefreshingPhotos || selectedIds.length === 0}
                         onClick={() => void saveSelectedPlaces()}
                         type="button"
@@ -273,23 +273,23 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
 
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <input
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:bg-white focus:ring-4 focus:ring-[#edf3ff]"
+                      className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:bg-white focus:ring-4 focus:ring-[#edf3ff] lg:h-10"
                       onChange={(event) => setListFilter(event.target.value)}
                       placeholder="장소명·주소·분류 태그로 목록 검색"
                       value={listFilter}
                     />
                     <div className="flex gap-1.5">
-                      <button className="h-10 rounded-xl border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 disabled:opacity-50" disabled={!selectableFilteredPlaces.length} onClick={selectVisiblePlaces} type="button">
+                      <button className="h-11 whitespace-nowrap rounded-xl border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 disabled:opacity-50 lg:h-10" disabled={!selectableFilteredPlaces.length} onClick={selectVisiblePlaces} type="button">
                         현재 결과 선택
                       </button>
-                      <button className="h-10 rounded-xl border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-500 transition hover:border-slate-300 disabled:opacity-50" disabled={!filteredPlaces.length} onClick={clearVisiblePlaces} type="button">
+                      <button className="h-11 whitespace-nowrap rounded-xl border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-500 transition hover:border-slate-300 disabled:opacity-50 lg:h-10" disabled={!filteredPlaces.length} onClick={clearVisiblePlaces} type="button">
                         선택 해제
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto">
+                <div className="safe-area-bottom min-h-0 flex-1 overflow-y-auto">
                   {filteredPlaces.length ? (
                     filteredPlaces.map((place) => {
                       const isDuplicate = existingUrls.has(place.naverUrl);

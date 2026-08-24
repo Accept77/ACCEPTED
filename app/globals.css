@@ -22,6 +22,40 @@ body {
   font-family: "Pretendard Variable", Pretendard, sans-serif;
 }
 
+.safe-area-bottom {
+  padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+  scroll-padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+}
+
+.safe-area-bottom-preserving {
+  padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+  scroll-padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .safe-area-bottom {
+    padding-bottom: 0.75rem;
+    scroll-padding-bottom: 0.75rem;
+  }
+
+  .safe-area-bottom-preserving {
+    padding-bottom: 0.75rem;
+    scroll-padding-bottom: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .safe-area-bottom {
+    padding-bottom: 0;
+    scroll-padding-bottom: 0;
+  }
+
+  .safe-area-bottom-preserving {
+    padding-bottom: 0.75rem;
+    scroll-padding-bottom: 0.75rem;
+  }
+}
+
 ::selection {
   background: #cfe0ff;
   color: var(--navy);

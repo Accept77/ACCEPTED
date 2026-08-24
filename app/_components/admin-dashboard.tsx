@@ -69,18 +69,18 @@ function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
 
       <div className="col-start-2 flex flex-wrap justify-start gap-1.5 sm:col-start-auto sm:justify-end">
         <button
-          className="h-8 rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed"
+          className="h-11 rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed lg:h-8"
           disabled={isPending}
           onClick={handleVisibility}
           type="button"
         >
           {restaurant.isVisible ? "숨기기" : "공개"}
         </button>
-        <Link className="flex h-8 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300" href={`/admin/${restaurant.id}`}>
+        <Link className="flex h-11 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 lg:h-8" href={`/admin/${restaurant.id}`}>
           수정
         </Link>
         <button
-          className="h-8 rounded-lg border border-rose-100 px-2.5 text-[0.68rem] font-bold text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-not-allowed"
+          className="h-11 rounded-lg border border-rose-100 px-2.5 text-[0.68rem] font-bold text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-not-allowed lg:h-8"
           disabled={isPending}
           onClick={handleDelete}
           type="button"
@@ -116,12 +116,12 @@ export function AdminDashboard({ restaurants, email }: { restaurants: Restaurant
             <p className="text-sm font-bold tracking-[-0.03em] text-slate-900">맛집 관리</p>
             <p className="max-w-[42vw] truncate text-[0.68rem] text-slate-400">{email}</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Link className="flex h-9 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300" href="/" target="_blank">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 lg:h-9" href="/" target="_blank">
               공개 페이지
             </Link>
             <button
-              className="h-9 rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-500 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-50"
+              className="h-11 shrink-0 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-500 transition hover:border-slate-300 hover:text-slate-800 disabled:opacity-50 lg:h-9"
               disabled={isSigningOut}
               onClick={handleSignOut}
               type="button"
@@ -143,16 +143,16 @@ export function AdminDashboard({ restaurants, email }: { restaurants: Restaurant
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <Link className="flex h-9 items-center rounded-lg border border-[#dce8ff] bg-[#f7faff] px-2.5 text-[0.68rem] font-bold text-[#2f6fed] transition hover:border-[#b8cffb]" href="/admin/import">
+                <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg border border-[#dce8ff] bg-[#f7faff] px-2.5 text-[0.68rem] font-bold text-[#2f6fed] transition hover:border-[#b8cffb] lg:h-9" href="/admin/import">
                   네이버 리스트 가져오기
                 </Link>
-                <Link className="flex h-9 items-center rounded-lg bg-[#2f6fed] px-3 text-[0.68rem] font-bold text-white transition hover:bg-[#255ac8]" href="/admin/new">
+                <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg bg-[#2f6fed] px-3 text-[0.68rem] font-bold text-white transition hover:bg-[#255ac8] lg:h-9" href="/admin/new">
                   + 맛집 등록
                 </Link>
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="safe-area-bottom min-h-0 flex-1 overflow-y-auto">
               {restaurants.length > 0 ? (
                 restaurants.map((restaurant) => <AdminPlaceRow key={restaurant.id} restaurant={restaurant} />)
               ) : (
