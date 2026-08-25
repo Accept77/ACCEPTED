@@ -8,6 +8,8 @@ import { useState, useTransition } from "react";
 
 import { deleteRestaurant, setRestaurantVisibility } from "@/app/actions/restaurants";
 import { signOutAdmin } from "@/app/actions/auth";
+import type { AdminRestaurantFilters } from "@/lib/data/restaurants";
+import { getVisitTag } from "@/lib/restaurant-filters";
 import type { Restaurant } from "@/lib/types";
 
 function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
@@ -59,6 +61,9 @@ function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${restaurant.isVisible ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}>
             {restaurant.isVisible ? "공개" : "숨김"}
           </span>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${restaurant.hasVisited ? "bg-blue-50 text-[#2f6fed]" : "bg-slate-100 text-slate-500"}`}>
+            {getVisitTag(restaurant.hasVisited)}
+          </span>
           {!restaurant.imageUrl ? <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-bold text-amber-600">사진 보완</span> : null}
         </div>
         <p className="mt-1 truncate text-xs text-slate-400">
@@ -92,11 +97,80 @@ function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
   );
 }
 
-export function AdminDashboard({ restaurants, email }: { restaurants: Restaurant[]; email: string }) {
+function adminQueryString(filters: Required<AdminRestaurantFilters>, page?: number) {
+  const params = new URLSearchParams();
+  if (filters.query) params.set("q", filters.query);
+  if (filters.visit !== "all") params.set("visit", filters.visit);
+  if (filters.visibility !== "all") params.set("visibility", filters.visibility);
+  if (filters.category) params.set("category", filters.category);
+  if (page && page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/admin?${query}` : "/admin";
+}
+
+function AdminPagination({ currentPage, totalPages, filters }: { currentPage: number; totalPages: number; filters: Required<AdminRestaurantFilters> }) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <nav aria-label="관리자 맛집 페이지" className="flex items-center justify-center gap-3 border-t border-slate-100 px-3 py-3">
+      {currentPage > 1 ? (
+        <Link
+          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-slate-300"
+          href={adminQueryString(filters, currentPage - 1)}
+        >
+          이전
+        </Link>
+      ) : (
+        <span className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-bold text-slate-300">이전</span>
+      )}
+      <span className="text-xs font-bold text-slate-500">
+        {currentPage} / {totalPages} 페이지
+      </span>
+      {currentPage < totalPages ? (
+        <Link
+          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-slate-300"
+          href={adminQueryString(filters, currentPage + 1)}
+        >
+          다음
+        </Link>
+      ) : (
+        <span className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-bold text-slate-300">다음</span>
+      )}
+    </nav>
+  );
+}
+
+type AdminDashboardProps = {
+  restaurants: Restaurant[];
+  email: string;
+  totalCount: number;
+  visibleCount: number;
+  visitedCount: number;
+  unvisitedCount: number;
+  missingImageCount: number;
+  filteredCount: number;
+  categories: string[];
+  filters: Required<AdminRestaurantFilters>;
+  page: number;
+  totalPages: number;
+};
+
+export function AdminDashboard({
+  restaurants,
+  email,
+  totalCount,
+  visibleCount,
+  visitedCount,
+  unvisitedCount,
+  missingImageCount,
+  filteredCount,
+  categories,
+  filters,
+  page,
+  totalPages,
+}: AdminDashboardProps) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const visibleCount = restaurants.filter((restaurant) => restaurant.isVisible).length;
-  const missingImageCount = restaurants.filter((restaurant) => !restaurant.imageUrl).length;
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -136,10 +210,10 @@ export function AdminDashboard({ restaurants, email }: { restaurants: Restaurant
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-3 py-3 sm:px-4">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold tracking-[-0.04em] text-slate-900">
-                  등록된 맛집 <span className="text-[#2f6fed]">{restaurants.length}</span>곳
+                  등록된 맛집 <span className="text-[#2f6fed]">{totalCount.toLocaleString("ko-KR")}</span>곳
                 </h1>
                 <p className="mt-1 text-[0.68rem] text-slate-400">
-                  공개 {visibleCount} · 숨김 {restaurants.length - visibleCount} · 사진 보완 {missingImageCount}
+                  공개 {visibleCount} · 숨김 {totalCount - visibleCount} · {getVisitTag(true)} {visitedCount} · {getVisitTag(false)} {unvisitedCount} · 사진 보완 {missingImageCount}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
@@ -152,20 +226,66 @@ export function AdminDashboard({ restaurants, email }: { restaurants: Restaurant
               </div>
             </div>
 
+            <form action="/admin" className="grid shrink-0 gap-2 border-b border-slate-100 bg-slate-50/70 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] sm:px-4" method="get">
+              <label className="flex h-11 min-w-0 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-400 sm:h-9">
+                <span className="sr-only">맛집 검색</span>
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-xs font-medium text-slate-800 outline-none placeholder:text-slate-400"
+                  defaultValue={filters.query}
+                  name="q"
+                  placeholder="가게명, 주소, 지역 검색"
+                />
+              </label>
+              <select className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none sm:h-9" defaultValue={filters.visit} name="visit">
+                <option value="all">전체</option>
+                <option value="visited">{getVisitTag(true)}</option>
+                <option value="unvisited">{getVisitTag(false)}</option>
+              </select>
+              <select className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none sm:h-9" defaultValue={filters.visibility} name="visibility">
+                <option value="all">공개 전체</option>
+                <option value="visible">공개</option>
+                <option value="hidden">숨김</option>
+              </select>
+              <select className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none sm:h-9" defaultValue={filters.category} name="category">
+                <option value="">카테고리 전체</option>
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+              <button className="h-11 rounded-xl bg-[#142033] px-4 text-xs font-bold text-white transition hover:bg-slate-700 sm:h-9" type="submit">
+                검색
+              </button>
+            </form>
+
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-3 py-2 text-xs sm:px-4">
+              <p className="font-semibold text-slate-500">현재 조건 <span className="font-black text-[#2f6fed]">{filteredCount.toLocaleString("ko-KR")}</span>곳</p>
+              {filters.query || filters.visit !== "all" || filters.visibility !== "all" || filters.category ? (
+                <Link className="font-bold text-slate-400 transition hover:text-slate-700" href="/admin">필터 초기화</Link>
+              ) : null}
+            </div>
+
             <div className="safe-area-bottom min-h-0 flex-1 overflow-y-auto">
               {restaurants.length > 0 ? (
                 restaurants.map((restaurant) => <AdminPlaceRow key={restaurant.id} restaurant={restaurant} />)
               ) : (
                 <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
                   <MapPinned aria-hidden="true" className="h-9 w-9 text-[#2f6fed]" strokeWidth={1.7} />
-                  <h2 className="mt-3 text-sm font-bold text-slate-800">아직 등록한 맛집이 없어요</h2>
-                  <p className="mt-2 text-xs text-slate-500">첫 번째 장소를 등록해 공개 페이지를 채워 보세요.</p>
-                  <Link className="mt-4 flex h-9 items-center rounded-lg bg-[#edf3ff] px-3 text-xs font-bold text-[#2f6fed]" href="/admin/new">
-                    첫 맛집 등록하기
-                  </Link>
+                  {totalCount > 0 ? (
+                    <>
+                      <h2 className="mt-3 text-sm font-bold text-slate-800">조건에 맞는 맛집이 없어요</h2>
+                      <p className="mt-2 text-xs text-slate-500">검색어나 필터를 조금 바꿔 다시 찾아보세요.</p>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="mt-3 text-sm font-bold text-slate-800">아직 등록한 맛집이 없어요</h2>
+                      <p className="mt-2 text-xs text-slate-500">첫 번째 장소를 등록해 공개 페이지를 채워 보세요.</p>
+                      <Link className="mt-4 flex h-9 items-center rounded-lg bg-[#edf3ff] px-3 text-xs font-bold text-[#2f6fed]" href="/admin/new">
+                        첫 맛집 등록하기
+                      </Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>
+            <AdminPagination currentPage={page} filters={filters} totalPages={totalPages} />
           </section>
         </div>
       </div>

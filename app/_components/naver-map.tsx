@@ -6,11 +6,14 @@ import {
   memo,
   type ComponentProps,
   type ReactNode,
+  useCallback,
   useMemo,
+  useState,
 } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MapPinned } from "lucide-react";
 import {
+  Circle,
   Container,
   Marker,
   NaverMap as ReactNaverMap,
@@ -20,14 +23,16 @@ import {
 
 import { getNaverMapClientId } from "@/lib/config";
 import { categoryIcon } from "@/lib/category-display";
-import type { Restaurant } from "@/lib/types";
+import type { UserLocation } from "@/lib/geo";
+import type { RestaurantSummary } from "@/lib/types";
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 
-type NaverMapProps = {
-  restaurants: Restaurant[];
+export type RestaurantMapProps = {
+  restaurants: RestaurantSummary[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  userLocation?: UserLocation | null;
 };
 
 type MapStatusCardProps = {
@@ -137,15 +142,60 @@ function markerPalette(category: string) {
 
 type MarkerIcon = NonNullable<ComponentProps<typeof Marker>["icon"]>;
 
-function markerIcon(category: string, isSelected: boolean): MarkerIcon {
+const USER_LOCATION_ICON: MarkerIcon = {
+  anchor: { x: 16, y: 16 },
+  content: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#2f6fed" fill-opacity=".18"/><circle cx="16" cy="16" r="7" fill="#2f6fed" stroke="#ffffff" stroke-width="3"/></svg>`,
+  size: { height: 32, width: 32 },
+};
+
+function escapeSvgText(value: string) {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&apos;",
+      })[character] ?? character,
+  );
+}
+
+function estimateMarkerLabelTextWidth(value: string) {
+  return Array.from(value).reduce((width, character) => {
+    if (/\s/.test(character)) return width + 4;
+    if (/[A-Za-z0-9]/.test(character)) return width + 7;
+    return width + 11;
+  }, 0);
+}
+
+function markerIcon(
+  category: string,
+  isSelected: boolean,
+  showName: boolean,
+  name: string,
+): MarkerIcon {
   const palette = markerPalette(category);
   const CategoryIcon = categoryIcon(category);
   const width = isSelected ? 48 : 40;
   const height = isSelected ? 56 : 48;
-  const centerX = width / 2;
+  const nameCharacters = Array.from(name);
+  const labelText =
+    nameCharacters.length > 14
+      ? `${nameCharacters.slice(0, 13).join("")}…`
+      : name;
+  const labelWidth = Math.min(
+    190,
+    Math.max(48, estimateMarkerLabelTextWidth(labelText) + 20),
+  );
+  const labelHeight = showName ? 28 : 0;
+  const totalWidth = showName ? Math.max(width, labelWidth) : width;
+  const totalHeight = height + labelHeight;
+  const centerX = totalWidth / 2;
   const radius = isSelected ? 19 : 16;
-  const centerY = radius + 3;
-  const tailY = height - 2;
+  const centerY = radius + 3 + labelHeight;
+  const tailY = height - 2 + labelHeight;
   const iconSize = isSelected ? 21 : 18;
   const background = isSelected ? "#2f6fed" : palette.fill;
   const border = isSelected ? "#ffffff" : palette.accent;
@@ -165,12 +215,19 @@ function markerIcon(category: string, isSelected: boolean): MarkerIcon {
   const selectedHalo = isSelected
     ? `<circle cx="${centerX}" cy="${centerY}" r="${radius + 4}" fill="none" stroke="#2f6fed" stroke-width="2" stroke-opacity=".28"/>`
     : "";
-  const content = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  const nameLabel = showName
+    ? `<g>
+      <rect x="${(totalWidth - labelWidth) / 2}" y="2" width="${labelWidth}" height="22" rx="11" fill="#ffffff" fill-opacity=".96" stroke="${isSelected ? "#2f6fed" : "#d8e3f2"}" stroke-width="1.2"/>
+      <text x="${centerX}" y="17" fill="#142033" font-family="'Pretendard Variable', Pretendard, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">${escapeSvgText(labelText)}</text>
+    </g>`
+    : "";
+  const content = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}">
     <defs>
       <filter id="marker-shadow" x="-40%" y="-30%" width="180%" height="190%">
         <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#142033" flood-opacity="${isSelected ? ".3" : ".2"}"/>
       </filter>
     </defs>
+    ${nameLabel}
     ${selectedHalo}
     <path d="${pinPath}" fill="${background}" stroke="${border}" stroke-width="${isSelected ? 2.5 : 2}" stroke-linejoin="round" filter="url(#marker-shadow)"/>
     <circle cx="${centerX}" cy="${centerY}" r="${radius - 3}" fill="${isSelected ? "#255ac8" : palette.accent}" fill-opacity="${isSelected ? "1" : ".12"}"/>
@@ -178,19 +235,21 @@ function markerIcon(category: string, isSelected: boolean): MarkerIcon {
   </svg>`;
 
   return {
-    anchor: { x: width / 2, y: height },
+    anchor: { x: totalWidth / 2, y: totalHeight },
     content,
-    size: { height, width },
+    size: { height: totalHeight, width: totalWidth },
   };
 }
 
 const MappableMarker = memo(function MappableMarker({
   restaurant,
   isSelected,
+  showName,
   onSelect,
 }: {
-  restaurant: Restaurant;
+  restaurant: RestaurantSummary;
   isSelected: boolean;
+  showName: boolean;
   onSelect: (id: string) => void;
 }) {
   if (restaurant.latitude === null || restaurant.longitude === null)
@@ -199,7 +258,12 @@ const MappableMarker = memo(function MappableMarker({
   return (
     <Marker
       defaultPosition={{ lat: restaurant.latitude, lng: restaurant.longitude }}
-      icon={markerIcon(restaurant.category, isSelected)}
+      icon={markerIcon(
+        restaurant.category,
+        isSelected,
+        showName,
+        restaurant.name,
+      )}
       onClick={() => onSelect(restaurant.id)}
       title={restaurant.name}
       zIndex={isSelected ? 1000 : 1}
@@ -207,7 +271,12 @@ const MappableMarker = memo(function MappableMarker({
   );
 });
 
-function MapContent({ restaurants, selectedId, onSelect }: NaverMapProps) {
+function MapContent({
+  restaurants,
+  selectedId,
+  onSelect,
+  userLocation,
+}: RestaurantMapProps) {
   const navermaps = useNavermaps();
   const mappableRestaurants = useMemo(
     () =>
@@ -225,9 +294,35 @@ function MapContent({ restaurants, selectedId, onSelect }: NaverMapProps) {
   );
   const focusedRestaurant =
     selectedRestaurant ??
-    (mappableRestaurants.length === 1 ? mappableRestaurants[0] : null);
+    (userLocation
+      ? null
+      : mappableRestaurants.length === 1
+        ? mappableRestaurants[0]
+        : null);
+  const [showNameLabels, setShowNameLabels] = useState(
+    () => (focusedRestaurant ? 16 : userLocation ? 15 : 11) >= 18,
+  );
+  const handleZoomChanged = useCallback((nextZoom: number) => {
+    const shouldShow = nextZoom >= 18;
+    setShowNameLabels((current) =>
+      current === shouldShow ? current : shouldShow,
+    );
+  }, []);
+  const mapCenter = useMemo(
+    () =>
+      focusedRestaurant
+        ? {
+            lat: focusedRestaurant.latitude!,
+            lng: focusedRestaurant.longitude!,
+          }
+        : userLocation
+          ? { lat: userLocation.latitude, lng: userLocation.longitude }
+          : undefined,
+    [focusedRestaurant, userLocation],
+  );
   const bounds = useMemo(() => {
-    if (focusedRestaurant || mappableRestaurants.length < 2) return undefined;
+    if (focusedRestaurant || userLocation || mappableRestaurants.length < 2)
+      return undefined;
 
     const firstRestaurant = mappableRestaurants[0];
     const firstPosition = new navermaps.LatLng(
@@ -241,37 +336,60 @@ function MapContent({ restaurants, selectedId, onSelect }: NaverMapProps) {
       );
     });
     return nextBounds;
-  }, [focusedRestaurant, mappableRestaurants, navermaps]);
+  }, [focusedRestaurant, mappableRestaurants, navermaps, userLocation]);
 
   return (
     <ReactNaverMap
-      center={
-        focusedRestaurant
-          ? {
-              lat: focusedRestaurant.latitude!,
-              lng: focusedRestaurant.longitude!,
-            }
-          : undefined
-      }
+      center={mapCenter}
       bounds={bounds}
       defaultCenter={SEOUL_CENTER}
       defaultZoom={11}
-      zoom={focusedRestaurant ? 16 : undefined}
+      zoom={focusedRestaurant ? 16 : userLocation ? 15 : undefined}
+      onZoomChanged={handleZoomChanged}
       zoomControl
     >
+      {userLocation ? (
+        <>
+          <Circle
+            center={{ lat: userLocation.latitude, lng: userLocation.longitude }}
+            fillColor="#2f6fed"
+            fillOpacity={0.1}
+            radius={Math.min(Math.max(userLocation.accuracy, 30), 250)}
+            strokeColor="#2f6fed"
+            strokeOpacity={0.35}
+            strokeWeight={1}
+            zIndex={900}
+          />
+          <Marker
+            icon={USER_LOCATION_ICON}
+            position={{
+              lat: userLocation.latitude,
+              lng: userLocation.longitude,
+            }}
+            title="현재 위치"
+            zIndex={2000}
+          />
+        </>
+      ) : null}
       {mappableRestaurants.map((restaurant) => (
         <MappableMarker
           isSelected={restaurant.id === selectedId}
           key={restaurant.id}
           onSelect={onSelect}
           restaurant={restaurant}
+          showName={showNameLabels}
         />
       ))}
     </ReactNaverMap>
   );
 }
 
-export function NaverMap({ restaurants, selectedId, onSelect }: NaverMapProps) {
+export function NaverMap({
+  restaurants,
+  selectedId,
+  onSelect,
+  userLocation,
+}: RestaurantMapProps) {
   const mapClientId = getNaverMapClientId();
   const mappableCount = restaurants.filter(
     (restaurant) =>
@@ -297,6 +415,7 @@ export function NaverMap({ restaurants, selectedId, onSelect }: NaverMapProps) {
                 onSelect={onSelect}
                 restaurants={restaurants}
                 selectedId={selectedId}
+                userLocation={userLocation}
               />
             </Container>
           </NavermapsProvider>

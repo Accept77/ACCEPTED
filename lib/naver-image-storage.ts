@@ -1,6 +1,5 @@
-import { STORAGE_BUCKET } from "@/lib/constants";
+import { getR2PublicUrl, uploadR2Object } from "@/lib/r2/server";
 import { isTrustedNaverImageUrl } from "@/lib/naver-images";
-import { createClient } from "@/lib/supabase/server";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -13,7 +12,7 @@ function extensionForContentType(contentType: string) {
 
 export async function storeNaverImage(sourceUrl: string) {
   if (!isTrustedNaverImageUrl(sourceUrl)) {
-    throw new Error("네이버 이미지 후보만 저장할 수 있습니다.");
+    throw new Error("신뢰할 수 있는 네이버 이미지 후보만 저장할 수 있습니다.");
   }
 
   let response: Response;
@@ -46,16 +45,15 @@ export async function storeNaverImage(sourceUrl: string) {
     throw new Error("이미지는 5MB 이하만 저장할 수 있습니다.");
   }
 
-  const path = `naver-imports/${crypto.randomUUID()}.${extensionForContentType(contentType)}`;
-  const supabase = await createClient();
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, bytes, {
+  const imagePath = `naver-imports/${crypto.randomUUID()}.${extensionForContentType(contentType)}`;
+  if (!getR2PublicUrl(imagePath)) {
+    throw new Error("R2_PUBLIC_BASE_URL 환경변수를 먼저 설정해 주세요.");
+  }
+
+  return uploadR2Object({
+    key: imagePath,
+    body: bytes,
     cacheControl: "31536000",
     contentType,
-    upsert: false,
   });
-
-  if (error) throw new Error(`이미지를 저장하지 못했습니다: ${error.message}`);
-
-  const imageUrl = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
-  return { imagePath: path, imageUrl };
 }

@@ -29,6 +29,7 @@ function placeToInput(place: NaverSavedPlace, sortOrder: number): RestaurantInpu
     address: place.address,
     memo: place.memo,
     tags: place.tags,
+    hasVisited: false,
     imagePath: null,
     imagePaths: [],
     imageSourceUrl: place.imageUrls.length ? place.naverUrl : null,

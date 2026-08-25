@@ -13,6 +13,7 @@ create table if not exists public.restaurants (
   address text not null default '',
   memo text not null default '',
   tags text[] not null default '{}',
+  has_visited boolean not null default false,
   image_path text,
   image_paths text[] not null default '{}',
   image_source_url text,
@@ -39,8 +40,14 @@ alter table public.restaurants
 alter table public.restaurants
   add column if not exists image_candidates text[] not null default '{}';
 
+alter table public.restaurants
+  add column if not exists has_visited boolean not null default false;
+
 create index if not exists restaurants_visible_order_idx
   on public.restaurants (is_visible, sort_order, created_at desc);
+
+create index if not exists restaurants_visit_status_idx
+  on public.restaurants (has_visited, is_visible, sort_order, created_at desc);
 
 alter table public.admin_users enable row level security;
 alter table public.restaurants enable row level security;

@@ -1,10 +1,10 @@
 import { RestaurantExplorer } from "@/app/_components/restaurant-explorer";
-import { getPublicRestaurants } from "@/lib/data/restaurants";
+import { getPublicRestaurantIndex } from "@/lib/data/restaurants";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const restaurants = await getPublicRestaurants();
+  const { restaurants, totalCount } = await getPublicRestaurantIndex();
 
-  return <RestaurantExplorer restaurants={restaurants} />;
+  return <RestaurantExplorer restaurants={restaurants} totalCount={totalCount} />;
 }

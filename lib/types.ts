@@ -1,4 +1,5 @@
 export type Restaurant = {
+  hasVisited: boolean;
   id: string;
   name: string;
   category: string;
@@ -22,7 +23,22 @@ export type Restaurant = {
   updatedAt: string;
 };
 
+export type RestaurantSummary = {
+  id: string;
+  name: string;
+  category: string;
+  area: string;
+  address: string;
+  memo: string;
+  tags: string[];
+  hasVisited: boolean;
+  imageUrl: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 export type RestaurantInput = {
+  hasVisited: boolean;
   name: string;
   category: string;
   area: string;
@@ -106,6 +122,7 @@ export type Database = {
           address: string;
           memo: string;
           tags: string[];
+          has_visited: boolean;
           image_path: string | null;
           image_paths: string[];
           image_source_url: string | null;
@@ -127,6 +144,7 @@ export type Database = {
           address?: string;
           memo?: string;
           tags?: string[];
+          has_visited?: boolean;
           image_path?: string | null;
           image_paths?: string[];
           image_source_url?: string | null;
@@ -148,6 +166,7 @@ export type Database = {
           address?: string;
           memo?: string;
           tags?: string[];
+          has_visited?: boolean;
           image_path?: string | null;
           image_paths?: string[];
           image_source_url?: string | null;

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { storeNaverImage } from "@/lib/naver-image-storage";
 import { isTrustedNaverImageUrl } from "@/lib/naver-images";
-import { STORAGE_BUCKET } from "@/lib/constants";
+import { deleteR2Objects } from "@/lib/r2/server";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { NaverSavedPlace, RestaurantInput } from "@/lib/types";
@@ -104,6 +104,7 @@ function validateRestaurantInput(input: RestaurantInput): RestaurantInput {
     address,
     memo,
     tags: cleanTags(input.tags),
+    hasVisited: Boolean(input.hasVisited),
     imagePath: imagePaths[0] ?? null,
     imagePaths,
     imageSourceUrl,
@@ -130,6 +131,7 @@ export async function createRestaurant(input: RestaurantInput) {
     address: restaurant.address,
     memo: restaurant.memo,
     tags: restaurant.tags,
+    has_visited: restaurant.hasVisited,
     image_path: restaurant.imagePath,
     image_paths: restaurant.imagePaths,
     image_source_url: restaurant.imageSourceUrl,
@@ -279,6 +281,7 @@ export async function importRestaurants(inputs: RestaurantInput[]) {
       address: restaurant.address,
       memo: restaurant.memo,
       tags: restaurant.tags,
+      has_visited: restaurant.hasVisited,
       image_path: imagePaths[0] ?? null,
       image_paths: imagePaths,
       image_source_url: restaurant.imageSourceUrl,
@@ -294,7 +297,7 @@ export async function importRestaurants(inputs: RestaurantInput[]) {
   if (rows.length > 0) {
     const { error } = await supabase.from("restaurants").insert(rows);
     if (error && uploadedImagePaths.length > 0) {
-      await supabase.storage.from(STORAGE_BUCKET).remove(uploadedImagePaths);
+      await deleteR2Objects(uploadedImagePaths);
     }
     if (error) throw new Error(`맛집 일괄 등록에 실패했습니다. ${error.message}`);
   }
@@ -458,7 +461,7 @@ export async function refreshRestaurantPhotos(places: NaverSavedPlace[]) {
 
         if (error) {
           if (imageImported && imagePath) {
-            await supabase.storage.from(STORAGE_BUCKET).remove([imagePath]);
+            await deleteR2Objects([imagePath]);
           }
           throw new Error(`맛집 사진을 보완하지 못했습니다. ${error.message}`);
         }
@@ -507,6 +510,7 @@ export async function updateRestaurant(id: string, input: RestaurantInput) {
       address: restaurant.address,
       memo: restaurant.memo,
       tags: restaurant.tags,
+      has_visited: restaurant.hasVisited,
       image_path: restaurant.imagePath,
       image_paths: restaurant.imagePaths,
       image_source_url: restaurant.imageSourceUrl,
@@ -531,7 +535,7 @@ export async function updateRestaurant(id: string, input: RestaurantInput) {
   const nextPaths = new Set(restaurant.imagePaths);
   const pathsToRemove = Array.from(new Set(previousPaths.filter((path) => !nextPaths.has(path))));
   if (pathsToRemove.length > 0) {
-    await supabase.storage.from(STORAGE_BUCKET).remove(pathsToRemove);
+    await deleteR2Objects(pathsToRemove);
   }
 
   revalidatePath("/");
@@ -573,7 +577,7 @@ export async function deleteRestaurant(id: string) {
       ? [restaurant.image_path]
       : [];
   if (imagePaths.length > 0) {
-    await supabase.storage.from(STORAGE_BUCKET).remove(Array.from(new Set(imagePaths)));
+    await deleteR2Objects(Array.from(new Set(imagePaths)));
   }
 
   revalidatePath("/");

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { NaverSavedListImporter } from "@/app/_components/naver-saved-list-importer";
-import { getAdminRestaurants } from "@/lib/data/restaurants";
+import { getAdminRestaurantKeys } from "@/lib/data/restaurants";
 import { requireAdmin } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function AdminImportPage() {
   await requireAdmin();
-  const restaurants = await getAdminRestaurants();
+  const restaurants = await getAdminRestaurantKeys();
 
   return (
     <NaverSavedListImporter
