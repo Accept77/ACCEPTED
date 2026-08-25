@@ -9,7 +9,8 @@ const r2PublicPattern = (() => {
     if (url.protocol !== "http:" && url.protocol !== "https:") return null;
 
     return {
-      protocol: url.protocol === "https:" ? ("https" as const) : ("http" as const),
+      protocol:
+        url.protocol === "https:" ? ("https" as const) : ("http" as const),
       hostname: url.hostname,
       pathname: "/**",
     };
@@ -41,6 +42,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  allowedDevOrigins: ["172.30.1.87"],
 };
 
 export default nextConfig;
