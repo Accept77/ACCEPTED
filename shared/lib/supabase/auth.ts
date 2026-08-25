@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { isSupabaseConfigured } from "@/lib/config";
-import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/shared/lib/config";
+import { createClient } from "@/shared/lib/supabase/server";
 
 export async function getCurrentUser() {
   if (!isSupabaseConfigured()) {

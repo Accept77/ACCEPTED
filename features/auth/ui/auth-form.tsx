@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/shared/lib/supabase/client";
 
 export function AuthForm({
   isConfigured,
@@ -51,14 +51,14 @@ export function AuthForm({
   }
 
   return (
-    <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-      <div>
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-2">
         <label className="text-xs font-bold text-slate-600" htmlFor="email">
           관리자 이메일
         </label>
         <input
           autoComplete="email"
-          className="mt-2 h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]"
+          className="h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]"
           id="email"
           onChange={(event) => setEmail(event.target.value)}
           placeholder="admin@example.com"
@@ -68,13 +68,13 @@ export function AuthForm({
         />
       </div>
 
-      <div>
+      <div className="flex flex-col gap-2">
         <label className="text-xs font-bold text-slate-600" htmlFor="password">
           비밀번호
         </label>
         <input
           autoComplete="current-password"
-          className="mt-2 h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]"
+          className="h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]"
           id="password"
           onChange={(event) => setPassword(event.target.value)}
           placeholder="비밀번호를 입력하세요"

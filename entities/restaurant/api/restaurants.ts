@@ -1,8 +1,8 @@
-import { demoRestaurants } from "@/lib/demo-data";
-import { isSupabaseConfigured } from "@/lib/config";
-import { getR2PublicUrl } from "@/lib/r2/server";
-import { createClient } from "@/lib/supabase/server";
-import type { Database, Restaurant, RestaurantSummary } from "@/lib/types";
+import { demoRestaurants } from "@/entities/restaurant/model/demo-data";
+import { isSupabaseConfigured } from "@/shared/lib/config";
+import { getR2PublicUrl } from "@/shared/lib/r2/server";
+import { createClient } from "@/shared/lib/supabase/server";
+import type { Database, Restaurant, RestaurantSummary } from "@/entities/restaurant/model/types";
 
 type RestaurantRow = Database["public"]["Tables"]["restaurants"]["Row"];
 type PublicRestaurantRow = Pick<

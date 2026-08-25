@@ -1,4 +1,4 @@
-import type { Restaurant } from "@/lib/types";
+import type { Restaurant } from "@/entities/restaurant/model/types";
 
 export const demoRestaurants: Restaurant[] = [
   {

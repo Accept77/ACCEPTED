@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-import { getSupabaseConfig } from "@/lib/config";
-import type { Database } from "@/lib/types";
+import { getSupabaseConfig } from "@/shared/lib/config";
+import type { Database } from "@/entities/restaurant/model/types";
 
 export async function createClient(): Promise<SupabaseClient<Database>> {
   const config = getSupabaseConfig();

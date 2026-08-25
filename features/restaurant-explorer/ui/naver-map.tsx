@@ -21,10 +21,10 @@ import {
   useNavermaps,
 } from "react-naver-maps";
 
-import { getNaverMapClientId } from "@/lib/config";
-import { categoryIcon } from "@/lib/category-display";
-import type { UserLocation } from "@/lib/geo";
-import type { RestaurantSummary } from "@/lib/types";
+import { getNaverMapClientId } from "@/shared/lib/config";
+import { categoryIcon } from "@/entities/restaurant/model/category-display";
+import type { UserLocation } from "@/shared/lib/geo";
+import type { RestaurantSummary } from "@/entities/restaurant/model/types";
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 
@@ -44,9 +44,9 @@ type MapStatusCardProps = {
 function MapStatusCard({ title, description, code }: MapStatusCardProps) {
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-[radial-gradient(circle_at_50%_38%,#f8fbff_0,#e9f0f7_48%,#dbe5ef_100%)] p-6">
-      <div className="max-w-sm rounded-[1.75rem] border border-white/80 bg-white/90 p-7 text-center shadow-[0_20px_70px_-35px_rgba(20,32,51,0.45)] backdrop-blur">
+      <div className="flex max-w-sm flex-col items-center gap-4 rounded-[1.75rem] border border-white/80 bg-white/90 p-7 text-center shadow-[0_20px_70px_-35px_rgba(20,32,51,0.45)] backdrop-blur">
         <div
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e9f1ff] text-2xl"
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e9f1ff] text-2xl"
           aria-hidden="true"
         >
           <MapPinned
@@ -55,12 +55,12 @@ function MapStatusCard({ title, description, code }: MapStatusCardProps) {
             strokeWidth={1.7}
           />
         </div>
-        <h2 className="mt-5 text-lg font-bold tracking-[-0.04em] text-slate-900">
+        <h2 className="text-lg font-bold tracking-[-0.04em] text-slate-900">
           {title}
         </h2>
-        <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>
+        <p className="text-sm leading-6 text-slate-500">{description}</p>
         {code ? (
-          <code className="mt-5 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+          <code className="block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
             {code}
           </code>
         ) : null}

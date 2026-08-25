@@ -1,8 +1,8 @@
 "use server";
 
-import { createR2PresignedUploadUrl, deleteR2Objects, getR2PublicUrl } from "@/lib/r2/server";
-import { storeNaverImage } from "@/lib/naver-image-storage";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { createR2PresignedUploadUrl, deleteR2Objects, getR2PublicUrl } from "@/shared/lib/r2/server";
+import { storeNaverImage } from "@/shared/lib/naver-image-storage";
+import { requireAdmin } from "@/shared/lib/supabase/auth";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { request as httpsRequest } from "node:https";
 
-import { getNaverCategoryTags } from "@/lib/naver-categories";
-import { isTrustedNaverImageUrl } from "@/lib/naver-images";
-import { getAdminStatus } from "@/lib/supabase/auth";
-import type { NaverSavedPlace } from "@/lib/types";
+import { getNaverCategoryTags } from "@/entities/restaurant/model/naver-categories";
+import { isTrustedNaverImageUrl } from "@/shared/lib/naver-images";
+import { getAdminStatus } from "@/shared/lib/supabase/auth";
+import type { NaverSavedPlace } from "@/entities/restaurant/model/types";
 
 export const runtime = "nodejs";
 

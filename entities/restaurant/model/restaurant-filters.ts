@@ -1,4 +1,4 @@
-import type { RestaurantSummary } from "@/lib/types";
+import type { RestaurantSummary } from "@/entities/restaurant/model/types";
 
 export const VISITED_TAG = "진수가 가봤어요";
 export const NOT_VISITED_TAG = "진수가 아직 안 가봤어요";

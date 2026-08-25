@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 
-import { importRestaurants, refreshRestaurantPhotos } from "@/app/actions/restaurants";
-import type { NaverSavedPlace, RestaurantInput } from "@/lib/types";
+import { importRestaurants, refreshRestaurantPhotos } from "@/features/restaurant-management/api/restaurants";
+import type { NaverSavedPlace, RestaurantInput } from "@/entities/restaurant/model/types";
 
 type ExistingRestaurant = {
   name: string;
@@ -189,14 +189,14 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
         <div className="min-h-0 flex-1 p-2.5 sm:p-4">
           <section className="flex h-full min-h-0 flex-col overflow-hidden border border-slate-200/80 bg-white">
             <div className="flex min-h-0 flex-1 flex-col gap-0 lg:grid lg:grid-cols-[minmax(280px,0.38fr)_minmax(0,1fr)]">
-              <div className="min-h-0 overflow-y-auto border-b border-slate-100 p-4 sm:p-5 lg:overflow-visible lg:border-b-0 lg:border-r">
+              <div className="flex min-h-0 flex-col gap-5 overflow-y-auto border-b border-slate-100 p-4 sm:p-5 lg:overflow-visible lg:border-b-0 lg:border-r">
                 <p className="text-[0.62rem] font-black tracking-[0.2em] text-[#2f6fed]">STEP 1</p>
-                <h1 className="mt-2 text-lg font-bold tracking-[-0.04em] text-slate-900">공유 링크 붙여넣기</h1>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
+                <h1 className="text-lg font-bold tracking-[-0.04em] text-slate-900">공유 링크 붙여넣기</h1>
+                <p className="text-xs leading-5 text-slate-500">
                   네이버 지도에서 저장 리스트를 일부 공개 또는 전체 공개로 공유한 뒤 링크를 붙여넣으세요.
                 </p>
 
-                <form className="mt-5 space-y-2" onSubmit={loadSavedList}>
+                <form className="flex flex-col gap-2" onSubmit={loadSavedList}>
                   <input
                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:bg-white focus:ring-4 focus:ring-[#edf3ff]"
                     onChange={(event) => setListUrl(event.target.value)}
@@ -212,17 +212,17 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
                   </button>
                 </form>
 
-                <div className="mt-5 rounded-xl bg-[#f7f9fc] p-3 text-[0.68rem] leading-5 text-slate-500">
+                <div className="flex flex-col gap-1 rounded-xl bg-[#f7f9fc] p-3 text-[0.68rem] leading-5 text-slate-500">
                   <p className="font-bold text-slate-700">가져오는 정보</p>
-                  <p className="mt-1">장소명, 주소, 좌표, 네이버 업종과 공식 장소 사진 후보를 가져옵니다. 업종은 분류 태그로 자동 저장됩니다.</p>
-                  <p className="mt-1 text-slate-400">첫 사진부터 Storage에 자동 저장하고, 실패한 사진은 공식 후보를 관리자 화면에서 다시 선택할 수 있습니다.</p>
+                  <p>장소명, 주소, 좌표, 네이버 업종과 공식 장소 사진 후보를 가져옵니다. 업종은 분류 태그로 자동 저장됩니다.</p>
+                  <p className="text-slate-400">첫 사진부터 Storage에 자동 저장하고, 실패한 사진은 공식 후보를 관리자 화면에서 다시 선택할 수 있습니다.</p>
                 </div>
 
                 {folderName ? (
-                  <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-[#dce8ff] bg-[#f7faff] px-3 py-2.5">
-                    <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-[#dce8ff] bg-[#f7faff] px-3 py-2.5">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <p className="truncate text-xs font-bold text-slate-800">{folderName}</p>
-                      <p className="mt-0.5 text-[0.65rem] text-slate-400">전체 {total}곳 · 읽음 {places.length}곳</p>
+                      <p className="text-[0.65rem] text-slate-400">전체 {total}곳 · 읽음 {places.length}곳</p>
                     </div>
                     {listUrl ? (
                       <a className="shrink-0 text-[0.65rem] font-bold text-[#2f6fed]" href={listUrl} rel="noreferrer" target="_blank">
@@ -236,18 +236,18 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="shrink-0 border-b border-slate-100 p-4 sm:p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-                    <div>
+                    <div className="flex flex-col gap-1">
                       <p className="text-[0.62rem] font-black tracking-[0.2em] text-[#2f6fed]">STEP 2</p>
-                      <h2 className="mt-2 text-lg font-bold tracking-[-0.04em] text-slate-900">
+                      <h2 className="text-lg font-bold tracking-[-0.04em] text-slate-900">
                         가져올 장소 <span className="text-[#2f6fed]">{selectedIds.length}</span>곳 선택
                       </h2>
                       {places.length ? (
-                        <p className="mt-1 text-[0.68rem] text-slate-400">
+                        <p className="text-[0.68rem] text-slate-400">
                           이미 등록된 장소 {duplicateCount}곳은 자동으로 제외됩니다.
                           {skippedCount ? ` 장소로 확인되지 않은 항목 ${skippedCount}곳.` : ""}
                         </p>
                       ) : (
-                        <p className="mt-1 text-[0.68rem] text-slate-400">리스트를 읽으면 장소 목록이 여기에 표시됩니다.</p>
+                        <p className="text-[0.68rem] text-slate-400">리스트를 읽으면 장소 목록이 여기에 표시됩니다.</p>
                       )}
                     </div>
                     <div className="flex flex-wrap justify-end gap-2">
@@ -272,7 +272,7 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <input
                       className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:bg-white focus:ring-4 focus:ring-[#edf3ff] lg:h-10"
                       onChange={(event) => setListFilter(event.target.value)}
@@ -298,7 +298,7 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
 
                       return (
                         <label className={`[content-visibility:auto] [contain-intrinsic-size:0_78px] flex cursor-pointer gap-3 border-b border-slate-100 px-4 py-3 transition last:border-b-0 sm:px-5 ${isDuplicate ? "cursor-not-allowed bg-slate-50/70 opacity-65" : "hover:bg-[#f8faff]"}`} key={place.id}>
-                          <input checked={isSelected} className="mt-1 h-4 w-4 accent-[#2f6fed]" disabled={isDuplicate} onChange={() => togglePlace(place)} type="checkbox" />
+                          <input checked={isSelected} className="h-4 w-4 self-start pt-1 accent-[#2f6fed]" disabled={isDuplicate} onChange={() => togglePlace(place)} type="checkbox" />
                           <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#edf3ff]">
                             {place.imageUrls[0] ? (
                               <Image alt="" className="object-cover" fill sizes="48px" src={place.imageUrls[0]} />
@@ -306,14 +306,14 @@ export function NaverSavedListImporter({ existingRestaurants }: { existingRestau
                               <span className="flex h-full items-center justify-center text-[0.6rem] font-bold text-slate-400">사진 없음</span>
                             )}
                           </span>
-                          <span className="min-w-0 flex-1">
+                          <span className="flex min-w-0 flex-1 flex-col gap-1">
                             <span className="flex flex-wrap items-center gap-1.5">
                               <span className="truncate text-sm font-bold text-slate-800">{place.name}</span>
                               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.6rem] font-bold text-slate-500">{place.category}</span>
                               {isDuplicate ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-bold text-amber-600">이미 등록</span> : null}
                             </span>
-                            <span className="mt-1 block truncate text-[0.68rem] text-slate-400">{place.address}</span>
-                            {place.tags.length ? <span className="mt-1 block truncate text-[0.62rem] text-[#6b8dcc]">{place.tags.join(" · ")}</span> : null}
+                            <span className="block truncate text-[0.68rem] text-slate-400">{place.address}</span>
+                            {place.tags.length ? <span className="block truncate text-[0.62rem] text-[#6b8dcc]">{place.tags.join(" · ")}</span> : null}
                           </span>
                         </label>
                       );

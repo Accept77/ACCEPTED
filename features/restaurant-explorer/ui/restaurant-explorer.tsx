@@ -4,13 +4,13 @@ import Image from "next/image";
 import { LocateFixed, MapPinned, Utensils } from "lucide-react";
 import { createElement, memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { RestaurantMap } from "@/app/_components/restaurant-map";
-import { RestaurantRecommendationModal } from "@/app/_components/restaurant-recommendation-modal";
-import { categoryIcon } from "@/lib/category-display";
-import { distanceInMeters, formatDistance, type UserLocation } from "@/lib/geo";
-import { getLocationHierarchy } from "@/lib/locations";
-import { getRestaurantDisplayTags, getVisitTag, matchesRestaurantTags, type VisitFilter } from "@/lib/restaurant-filters";
-import type { Restaurant, RestaurantSummary } from "@/lib/types";
+import { RestaurantMap } from "@/features/restaurant-explorer/ui/restaurant-map";
+import { RestaurantRecommendationModal } from "@/features/restaurant-explorer/ui/restaurant-recommendation-modal";
+import { categoryIcon } from "@/entities/restaurant/model/category-display";
+import { distanceInMeters, formatDistance, type UserLocation } from "@/shared/lib/geo";
+import { getLocationHierarchy } from "@/entities/restaurant/model/locations";
+import { getRestaurantDisplayTags, getVisitTag, matchesRestaurantTags, type VisitFilter } from "@/entities/restaurant/model/restaurant-filters";
+import type { Restaurant, RestaurantSummary } from "@/entities/restaurant/model/types";
 
 type RestaurantExplorerProps = {
   restaurants: RestaurantSummary[];
@@ -214,17 +214,17 @@ const RestaurantListItem = memo(function RestaurantListItem({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 py-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1 py-0.5">
           <div className="flex items-center gap-2 text-[0.68rem] font-bold text-[#2f6fed]">
             <span>{restaurant.category}</span>
             {locationLabel ? <span className="text-slate-300">·</span> : null}
             <span className="truncate text-slate-400">{locationLabel || "지역 미지정"}</span>
           </div>
-          <h2 className="mt-1 truncate text-[0.98rem] font-bold tracking-[-0.03em] text-slate-900">
+          <h2 className="truncate text-[0.98rem] font-bold tracking-[-0.03em] text-slate-900">
             {restaurant.name}
           </h2>
-          {distance !== null ? <p className="mt-1 text-xs font-semibold text-[#2f6fed]">현재 위치에서 {formatDistance(distance)}</p> : null}
-          {restaurant.memo ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{restaurant.memo}</p> : null}
+          {distance !== null ? <p className="text-xs font-semibold text-[#2f6fed]">현재 위치에서 {formatDistance(distance)}</p> : null}
+          {restaurant.memo ? <p className="line-clamp-2 text-xs leading-5 text-slate-500">{restaurant.memo}</p> : null}
         </div>
       </button>
 
@@ -314,23 +314,23 @@ function RestaurantDetail({
           </button>
         </div>
 
-        <div className="p-6 sm:p-8">
+        <div className="flex flex-col gap-4 p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#2f6fed]">
             <span>{restaurant.category}</span>
             {locationLabel ? <span>· {locationLabel}</span> : null}
           </div>
-          <h2 className="mt-3 text-3xl font-bold tracking-[-0.06em] text-slate-900">{restaurant.name}</h2>
+          <h2 className="text-3xl font-bold tracking-[-0.06em] text-slate-900">{restaurant.name}</h2>
           {restaurant.memo ? (
-            <p className="mt-5 whitespace-pre-line text-[0.95rem] leading-7 text-slate-600">{restaurant.memo}</p>
+            <p className="whitespace-pre-line text-[0.95rem] leading-7 text-slate-600">{restaurant.memo}</p>
           ) : null}
 
-          <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
             <p className="font-semibold text-slate-800">주소</p>
-            <p className="mt-1">{restaurant.address || "주소 정보가 없습니다."}</p>
+            <p>{restaurant.address || "주소 정보가 없습니다."}</p>
           </div>
 
           {restaurant.imageUrl && restaurant.imageSourceUrl ? (
-            <p className="mt-3 text-[0.68rem] leading-5 text-slate-400">
+            <p className="text-[0.68rem] leading-5 text-slate-400">
               이미지 출처: {restaurant.imageCredit ? `${restaurant.imageCredit} · ` : ""}
               <a className="underline underline-offset-2 transition hover:text-slate-600" href={restaurant.imageSourceUrl} rel="noreferrer" target="_blank">
                 네이버 이미지
@@ -339,7 +339,7 @@ function RestaurantDetail({
           ) : null}
 
           {getRestaurantDisplayTags(restaurant).length > 0 ? (
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {getRestaurantDisplayTags(restaurant).map((tag) => (
                 <span
                   className="rounded-full bg-[#edf3ff] px-3 py-1.5 text-xs font-semibold text-[#2f6fed]"
@@ -352,7 +352,7 @@ function RestaurantDetail({
           ) : null}
 
           <a
-            className="mt-7 flex h-13 items-center justify-center gap-2 rounded-2xl bg-[#2f6fed] px-5 text-sm font-bold text-white transition hover:bg-[#255ac8]"
+            className="flex h-13 items-center justify-center gap-2 rounded-2xl bg-[#2f6fed] px-5 text-sm font-bold text-white transition hover:bg-[#255ac8]"
             href={restaurant.naverUrl}
             rel="noreferrer"
             target="_blank"
@@ -396,15 +396,15 @@ function RestaurantDetailStatus({
       }}
       role="dialog"
     >
-      <div className="w-full rounded-t-[2rem] bg-white p-8 text-center shadow-2xl sm:max-w-xl sm:rounded-[2rem]">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edf3ff]">
+      <div className="flex w-full flex-col items-center gap-4 rounded-t-[2rem] bg-white p-8 text-center shadow-2xl sm:max-w-xl sm:rounded-[2rem]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edf3ff]">
           <RestaurantCategoryIcon category={restaurant.category} className="h-8 w-8 text-[#2f6fed]" />
         </div>
-        <h2 className="mt-5 text-xl font-bold tracking-[-0.04em] text-slate-900">{restaurant.name}</h2>
-        <p className="mt-2 text-sm text-slate-500">
+        <h2 className="text-xl font-bold tracking-[-0.04em] text-slate-900">{restaurant.name}</h2>
+        <p className="text-sm text-slate-500">
           {isLoading ? "상세 정보를 불러오는 중이에요." : error}
         </p>
-        <div className="mt-6 flex justify-center gap-2">
+        <div className="flex justify-center gap-2">
           {!isLoading && error ? (
             <button
               className="rounded-xl bg-[#2f6fed] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#255ac8]"
@@ -782,10 +782,10 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
               : "lg:w-[clamp(360px,29dvw,480px)] lg:opacity-100"
           }`}
         >
-          <div className="shrink-0 border-b border-slate-100 p-3 sm:p-4">
+          <div className="flex shrink-0 flex-col gap-2 border-b border-slate-100 p-3 sm:p-4">
             <RestaurantSearchBar key={searchResetKey} onApply={applySearch} value={search} />
 
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400 lg:min-h-0">
                   지역
                   <select
@@ -824,7 +824,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
                 </label>
               </div>
 
-              <label className="mt-2 flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400 lg:min-h-0">
+              <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[0.68rem] font-bold text-slate-400 lg:min-h-0">
                 분류 추가
                 <select
                   className="min-w-0 flex-1 truncate bg-transparent text-xs font-bold text-slate-700 outline-none"
@@ -842,7 +842,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
               </label>
 
               {pendingTags.length > 0 || selectedTags.length > 0 ? (
-                <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label="선택한 분류">
+                <div className="flex flex-wrap items-center gap-1.5" aria-label="선택한 분류">
                   {pendingTags.map((item) => (
                     <button
                       className="rounded-full bg-[#2f6fed] px-3 py-1.5 text-[0.66rem] font-bold text-white transition hover:bg-[#255ac8]"
@@ -865,7 +865,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
                 </div>
               ) : null}
 
-              <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="진수의 방문 여부 필터">
+              <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="진수의 방문 여부 필터">
                 {[
                   ["all", "전체"],
                   ["visited", getVisitTag(true)],
@@ -889,7 +889,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
               </div>
 
               {userLocation ? (
-                <div className="mt-2 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="내 주변 맛집 거리 필터">
+                <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="내 주변 맛집 거리 필터">
                   <span className="shrink-0 px-1 text-[0.66rem] font-bold text-slate-400">내 주변</span>
                   <button
                     aria-pressed={nearbyRadiusKm === null}
@@ -924,7 +924,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
               ) : null}
 
               {region !== ALL_REGION && districts.length > 0 ? (
-                <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="선택한 지역의 세부 지역">
+                <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="선택한 지역의 세부 지역">
                   {districts.slice(0, 8).map((item) => (
                     <button
                       aria-pressed={district === item}
@@ -945,7 +945,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
               ) : null}
 
               {tags.length > 0 ? (
-                <div className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {visibleTags.slice(0, 8).map((item) => (
                     <button
                       aria-pressed={pendingTags.includes(item)}
@@ -967,7 +967,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
             <p className="min-w-0 text-sm font-bold text-slate-800">
               맛집 <span className="text-[#2f6fed]">{(activeFilterCount > 0 ? filteredRestaurants.length : totalCount).toLocaleString("ko-KR")}</span>곳
               {activeFilterCount > 0 ? (
-                <span className="ml-1 text-xs font-semibold text-slate-400">
+                <span className="pl-1 text-xs font-semibold text-slate-400">
                   / 전체 {totalCount.toLocaleString("ko-KR")}곳 · 필터 적용 중
                 </span>
               ) : null}
@@ -983,7 +983,7 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
 
           <div className="safe-area-bottom-preserving min-h-0 flex-1 overflow-y-auto p-2.5 sm:p-3" ref={restaurantListRef}>
             {filteredRestaurants.length > 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {visibleRestaurants.map((restaurant, index) => (
                   <RestaurantListItem
                     distance={restaurantDistances.get(restaurant.id) ?? null}
@@ -997,12 +997,12 @@ export function RestaurantExplorer({ restaurants, totalCount }: RestaurantExplor
                 ))}
               </div>
             ) : (
-              <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 px-6 text-center">
+              <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 px-6 text-center">
                 <MapPinned aria-hidden="true" className="h-9 w-9 text-[#2f6fed]" strokeWidth={1.7} />
-                <h2 className="mt-4 text-sm font-bold text-slate-800">조건에 맞는 맛집이 없어요</h2>
-                <p className="mt-2 text-xs leading-5 text-slate-500">검색어나 필터를 조금 바꿔 다시 찾아보세요.</p>
+                <h2 className="text-sm font-bold text-slate-800">조건에 맞는 맛집이 없어요</h2>
+                <p className="text-xs leading-5 text-slate-500">검색어나 필터를 조금 바꿔 다시 찾아보세요.</p>
                 <button
-                  className="mt-4 min-h-11 rounded-full bg-[#edf3ff] px-3.5 py-2 text-xs font-bold text-[#2f6fed] transition hover:bg-[#dfeaff] lg:min-h-0"
+                  className="min-h-11 rounded-full bg-[#edf3ff] px-3.5 py-2 text-xs font-bold text-[#2f6fed] transition hover:bg-[#dfeaff] lg:min-h-0"
                   onClick={resetFilters}
                   type="button"
                 >

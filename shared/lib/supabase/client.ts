@@ -1,8 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getSupabaseConfig } from "@/lib/config";
-import type { Database } from "@/lib/types";
+import { getSupabaseConfig } from "@/shared/lib/config";
+import type { Database } from "@/entities/restaurant/model/types";
 
 export function createClient(): SupabaseClient<Database> {
   const config = getSupabaseConfig();

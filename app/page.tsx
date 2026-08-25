@@ -1,5 +1,5 @@
-import { RestaurantExplorer } from "@/app/_components/restaurant-explorer";
-import { getPublicRestaurantIndex } from "@/lib/data/restaurants";
+import { RestaurantExplorer } from "@/features/restaurant-explorer/ui/restaurant-explorer";
+import { getPublicRestaurantIndex } from "@/entities/restaurant/api/restaurants";
 
 export const dynamic = "force-dynamic";
 

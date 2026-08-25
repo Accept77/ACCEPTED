@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getPublicRestaurantById } from "@/lib/data/restaurants";
+import { getPublicRestaurantById } from "@/entities/restaurant/api/restaurants";
 
 type RestaurantRouteContext = {
   params: Promise<{ id: string }>;

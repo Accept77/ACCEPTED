@@ -6,11 +6,11 @@ import { MapPinned, UtensilsCrossed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { deleteRestaurant, setRestaurantVisibility } from "@/app/actions/restaurants";
-import { signOutAdmin } from "@/app/actions/auth";
-import type { AdminRestaurantFilters } from "@/lib/data/restaurants";
-import { getVisitTag } from "@/lib/restaurant-filters";
-import type { Restaurant } from "@/lib/types";
+import { deleteRestaurant, setRestaurantVisibility } from "@/features/restaurant-management/api/restaurants";
+import { signOutAdmin } from "@/features/auth/api/actions";
+import type { AdminRestaurantFilters } from "@/entities/restaurant/api/restaurants";
+import { getVisitTag } from "@/entities/restaurant/model/restaurant-filters";
+import type { Restaurant } from "@/entities/restaurant/model/types";
 
 function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
   const router = useRouter();
@@ -55,7 +55,7 @@ function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
         )}
       </div>
 
-      <div className="min-w-0 self-center">
+      <div className="flex min-w-0 flex-col gap-1 self-center">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-sm font-bold text-slate-900">{restaurant.name}</h2>
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold ${restaurant.isVisible ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}>
@@ -66,10 +66,10 @@ function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
           </span>
           {!restaurant.imageUrl ? <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-bold text-amber-600">사진 보완</span> : null}
         </div>
-        <p className="mt-1 truncate text-xs text-slate-400">
+        <p className="truncate text-xs text-slate-400">
           {restaurant.category} · {restaurant.area || "지역 미지정"} · {restaurant.address}
         </p>
-        {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : null}
+        {error ? <p className="text-xs text-rose-600">{error}</p> : null}
       </div>
 
       <div className="col-start-2 flex flex-wrap justify-start gap-1.5 sm:col-start-auto sm:justify-end">
@@ -208,11 +208,11 @@ export function AdminDashboard({
         <div className="min-h-0 flex-1 p-2.5 sm:p-4">
           <section className="flex h-full min-h-0 flex-col overflow-hidden border border-slate-200/80 bg-white">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-3 py-3 sm:px-4">
-              <div className="min-w-0">
+              <div className="flex min-w-0 flex-col gap-1">
                 <h1 className="truncate text-base font-bold tracking-[-0.04em] text-slate-900">
                   등록된 맛집 <span className="text-[#2f6fed]">{totalCount.toLocaleString("ko-KR")}</span>곳
                 </h1>
-                <p className="mt-1 text-[0.68rem] text-slate-400">
+                <p className="text-[0.68rem] text-slate-400">
                   공개 {visibleCount} · 숨김 {totalCount - visibleCount} · {getVisitTag(true)} {visitedCount} · {getVisitTag(false)} {unvisitedCount} · 사진 보완 {missingImageCount}
                 </p>
               </div>
@@ -266,18 +266,18 @@ export function AdminDashboard({
               {restaurants.length > 0 ? (
                 restaurants.map((restaurant) => <AdminPlaceRow key={restaurant.id} restaurant={restaurant} />)
               ) : (
-                <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
+                <div className="flex min-h-64 flex-col items-center justify-center gap-3 px-6 text-center">
                   <MapPinned aria-hidden="true" className="h-9 w-9 text-[#2f6fed]" strokeWidth={1.7} />
                   {totalCount > 0 ? (
                     <>
-                      <h2 className="mt-3 text-sm font-bold text-slate-800">조건에 맞는 맛집이 없어요</h2>
-                      <p className="mt-2 text-xs text-slate-500">검색어나 필터를 조금 바꿔 다시 찾아보세요.</p>
+                      <h2 className="text-sm font-bold text-slate-800">조건에 맞는 맛집이 없어요</h2>
+                      <p className="text-xs text-slate-500">검색어나 필터를 조금 바꿔 다시 찾아보세요.</p>
                     </>
                   ) : (
                     <>
-                      <h2 className="mt-3 text-sm font-bold text-slate-800">아직 등록한 맛집이 없어요</h2>
-                      <p className="mt-2 text-xs text-slate-500">첫 번째 장소를 등록해 공개 페이지를 채워 보세요.</p>
-                      <Link className="mt-4 flex h-9 items-center rounded-lg bg-[#edf3ff] px-3 text-xs font-bold text-[#2f6fed]" href="/admin/new">
+                      <h2 className="text-sm font-bold text-slate-800">아직 등록한 맛집이 없어요</h2>
+                      <p className="text-xs text-slate-500">첫 번째 장소를 등록해 공개 페이지를 채워 보세요.</p>
+                      <Link className="flex h-9 items-center rounded-lg bg-[#edf3ff] px-3 text-xs font-bold text-[#2f6fed]" href="/admin/new">
                         첫 맛집 등록하기
                       </Link>
                     </>

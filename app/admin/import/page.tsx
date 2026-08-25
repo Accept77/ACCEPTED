@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
-import { NaverSavedListImporter } from "@/app/_components/naver-saved-list-importer";
-import { getAdminRestaurantKeys } from "@/lib/data/restaurants";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { NaverSavedListImporter } from "@/features/naver-import/ui/naver-saved-list-importer";
+import { getAdminRestaurantKeys } from "@/entities/restaurant/api/restaurants";
+import { requireAdmin } from "@/shared/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
 

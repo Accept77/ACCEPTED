@@ -1,5 +1,5 @@
-import { getR2PublicUrl, uploadR2Object } from "@/lib/r2/server";
-import { isTrustedNaverImageUrl } from "@/lib/naver-images";
+import { getR2PublicUrl, uploadR2Object } from "@/shared/lib/r2/server";
+import { isTrustedNaverImageUrl } from "@/shared/lib/naver-images";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);

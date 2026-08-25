@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getNaverApiConfig } from "@/lib/config";
-import { getAdminStatus } from "@/lib/supabase/auth";
-import type { NaverPlaceSearchResult } from "@/lib/types";
+import { getNaverApiConfig } from "@/shared/lib/config";
+import { getAdminStatus } from "@/shared/lib/supabase/auth";
+import type { NaverPlaceSearchResult } from "@/entities/restaurant/model/types";
 
 type NaverResponse = {
   items?: Array<{

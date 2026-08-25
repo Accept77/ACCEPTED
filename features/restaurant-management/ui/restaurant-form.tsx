@@ -6,15 +6,15 @@ import { UtensilsCrossed } from "lucide-react";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-import { createImageUploadUrl, deleteUploadedImages, importImageFromNaver } from "@/app/actions/images";
-import { createRestaurant, updateRestaurant } from "@/app/actions/restaurants";
-import { RESTAURANT_CATEGORIES } from "@/lib/constants";
-import { getNaverCategoryTags } from "@/lib/naver-categories";
-import { getVisitTag } from "@/lib/restaurant-filters";
-import type { NaverImageCandidate, NaverPlaceSearchResult, Restaurant, RestaurantInput } from "@/lib/types";
+import { createImageUploadUrl, deleteUploadedImages, importImageFromNaver } from "@/features/restaurant-management/api/images";
+import { createRestaurant, updateRestaurant } from "@/features/restaurant-management/api/restaurants";
+import { RESTAURANT_CATEGORIES } from "@/shared/lib/constants";
+import { getNaverCategoryTags } from "@/entities/restaurant/model/naver-categories";
+import { getVisitTag } from "@/entities/restaurant/model/restaurant-filters";
+import type { NaverImageCandidate, NaverPlaceSearchResult, Restaurant, RestaurantInput } from "@/entities/restaurant/model/types";
 
 const inputClass =
-  "mt-2 h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]";
+  "h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]";
 const compactInputClass = inputClass.replace("h-13", "h-11").replace("rounded-2xl", "rounded-xl").replace("px-4", "px-3");
 const MAX_IMAGES = 3;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -371,18 +371,18 @@ export function RestaurantForm({
   const formSectionClass = isCompact
     ? "rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_14px_35px_-28px_rgba(20,32,51,0.35)] sm:p-5"
     : "rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-35px_rgba(20,32,51,0.35)] sm:p-7";
-  const contentSpacingClass = isCompact ? "mt-4" : "mt-6";
+  const contentSpacingClass = isCompact ? "pt-4" : "pt-6";
   const fieldClass = isCompact ? compactInputClass : inputClass;
 
   return (
-    <form className={isCompact ? "space-y-4" : "space-y-8"} onSubmit={handleSubmit}>
-      <details className={formSectionClass} onToggle={(event) => setIsPlaceSearchOpen(event.currentTarget.open)} open={isPlaceSearchOpen}>
+    <form className={isCompact ? "flex flex-col gap-4" : "flex flex-col gap-8"} onSubmit={handleSubmit}>
+      <details className={`${formSectionClass} flex flex-col gap-3`} onToggle={(event) => setIsPlaceSearchOpen(event.currentTarget.open)} open={isPlaceSearchOpen}>
         <summary className="list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
-          <div>
+          <div className="flex flex-col gap-2">
             <p className="text-xs font-black tracking-[0.22em] text-[#2f6fed]">NAVER PLACE SEARCH</p>
-            <h2 className="mt-2 text-xl font-bold tracking-[-0.05em] text-slate-900">장소를 먼저 찾아보세요.</h2>
-            <p className="mt-2 text-sm text-slate-500">검색 결과를 선택하면 기본 정보가 자동으로 채워집니다.</p>
+            <h2 className="text-xl font-bold tracking-[-0.05em] text-slate-900">장소를 먼저 찾아보세요.</h2>
+            <p className="text-sm text-slate-500">검색 결과를 선택하면 기본 정보가 자동으로 채워집니다.</p>
           </div>
           </div>
         </summary>
@@ -412,9 +412,9 @@ export function RestaurantForm({
           </button>
         </div>
 
-        {searchError ? <p className="mt-3 text-sm text-rose-600">{searchError}</p> : null}
+        {searchError ? <p className="text-sm text-rose-600">{searchError}</p> : null}
         {searchResults.length > 0 ? (
-          <div className={`${isCompact ? "mt-3 rounded-xl" : "mt-4 rounded-2xl"} divide-y divide-slate-100 overflow-hidden border border-slate-200`}>
+          <div className={`${isCompact ? "rounded-xl" : "rounded-2xl"} divide-y divide-slate-100 overflow-hidden border border-slate-200`}>
             {searchResults.map((place) => (
               <button
                 className={`${isCompact ? "px-3 py-3" : "px-4 py-4"} block w-full text-left transition hover:bg-[#f8faff]`}
@@ -423,26 +423,26 @@ export function RestaurantForm({
                 type="button"
               >
                 <span className="block font-bold text-slate-800">{place.name}</span>
-                <span className="mt-1 block text-xs text-slate-400">{place.category} · {place.roadAddress || place.address}</span>
+                <span className="block text-xs text-slate-400">{place.category} · {place.roadAddress || place.address}</span>
               </button>
             ))}
           </div>
         ) : null}
       </details>
 
-      <section className={formSectionClass}>
-        <div>
+      <section className={`${formSectionClass} flex flex-col gap-4`}>
+        <div className="flex flex-col gap-2">
           <p className="text-xs font-black tracking-[0.22em] text-slate-400">CURATION DETAILS</p>
-          <h2 className="mt-2 text-xl font-bold tracking-[-0.05em] text-slate-900">나만의 설명을 더해보세요.</h2>
+          <h2 className="text-xl font-bold tracking-[-0.05em] text-slate-900">나만의 설명을 더해보세요.</h2>
         </div>
 
-        <div className={`${contentSpacingClass} grid gap-3 sm:grid-cols-2 sm:gap-4`}>
-          <label className="sm:col-span-2">
+        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+          <label className="flex flex-col gap-2 sm:col-span-2">
             <span className="text-xs font-bold text-slate-600">가게 이름</span>
             <input className={fieldClass} onChange={(event) => updateText("name", event.target.value)} required value={form.name} />
           </label>
 
-          <label>
+          <label className="flex flex-col gap-2">
             <span className="text-xs font-bold text-slate-600">카테고리</span>
             <select className={fieldClass} onChange={(event) => updateText("category", event.target.value)} value={form.category}>
               {Array.from(new Set([...RESTAURANT_CATEGORIES, form.category])).map((category) => (
@@ -451,20 +451,20 @@ export function RestaurantForm({
             </select>
           </label>
 
-          <label>
+          <label className="flex flex-col gap-2">
             <span className="text-xs font-bold text-slate-600">지역</span>
             <input className={fieldClass} onChange={(event) => updateText("area", event.target.value)} placeholder="예: 성수, 연남" value={form.area} />
           </label>
 
-          <label className="sm:col-span-2">
+          <label className="flex flex-col gap-2 sm:col-span-2">
             <span className="text-xs font-bold text-slate-600">주소</span>
             <input className={fieldClass} onChange={(event) => updateText("address", event.target.value)} required value={form.address} />
           </label>
 
-          <label className="sm:col-span-2">
+          <label className="flex flex-col gap-2 sm:col-span-2">
             <span className="text-xs font-bold text-slate-600">추천 메모</span>
             <textarea
-              className={`${isCompact ? "min-h-24 rounded-xl px-3" : "min-h-32 rounded-2xl px-4"} mt-2 w-full resize-y border border-slate-200 bg-white py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]`}
+              className={`${isCompact ? "min-h-24 rounded-xl px-3" : "min-h-32 rounded-2xl px-4"} w-full resize-y border border-slate-200 bg-white py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]`}
               onChange={(event) => updateText("memo", event.target.value)}
               placeholder="왜 좋아하는 곳인지, 누구와 가기 좋은지 적어보세요."
               value={form.memo}
@@ -474,22 +474,22 @@ export function RestaurantForm({
           <label className={`sm:col-span-2 flex cursor-pointer items-start border border-[#dce8ff] bg-[#f7faff] ${isCompact ? "gap-2 rounded-xl p-3" : "gap-3 rounded-2xl p-4"} transition hover:border-[#b8cffb]`}>
             <input
               checked={form.hasVisited}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[#2f6fed]"
+              className="h-5 w-5 shrink-0 self-start pt-0.5 accent-[#2f6fed]"
               onChange={(event) => {
                 setForm((previous) => ({ ...previous, hasVisited: event.target.checked }));
               }}
               type="checkbox"
             />
-            <span>
+            <span className="flex flex-col gap-1">
               <span className="block text-sm font-bold text-slate-800">진수가 가본 식당</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-500">체크하면 공개 화면에 ‘{getVisitTag(true)}’ 태그가 자동으로 표시됩니다.</span>
+              <span className="block text-xs leading-5 text-slate-500">체크하면 공개 화면에 ‘{getVisitTag(true)}’ 태그가 자동으로 표시됩니다.</span>
             </span>
           </label>
 
-          <div className="sm:col-span-2">
+          <div className="flex flex-col gap-2 sm:col-span-2">
             <span className="text-xs font-bold text-slate-600">네이버 분류</span>
             {form.tags.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {form.tags.map((tag) => (
                   <span className="rounded-full bg-[#e3edff] px-2.5 py-1.5 text-xs font-semibold text-[#2f6fed]" key={tag}>
                     {tag}
@@ -497,27 +497,27 @@ export function RestaurantForm({
                 ))}
               </div>
             ) : (
-              <div className="mt-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-400">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-400">
                 네이버 검색 결과를 선택하면 장소 분류가 자동으로 채워집니다.
               </div>
             )}
-            <span className="mt-2 block text-xs text-slate-400">관리자가 직접 입력하지 않고 네이버 장소 분류에서 자동 생성됩니다.</span>
+            <span className="block text-xs text-slate-400">관리자가 직접 입력하지 않고 네이버 장소 분류에서 자동 생성됩니다.</span>
           </div>
 
-          <label className="sm:col-span-2">
+          <label className="flex flex-col gap-2 sm:col-span-2">
             <span className="text-xs font-bold text-slate-600">네이버 지도 링크</span>
             <input className={fieldClass} onChange={(event) => updateText("naverUrl", event.target.value)} required type="url" value={form.naverUrl} />
           </label>
         </div>
       </section>
 
-      <details className={formSectionClass} onToggle={(event) => setIsImageManagerOpen(event.currentTarget.open)} open={isImageManagerOpen}>
+      <details className={`${formSectionClass} flex flex-col gap-4`} onToggle={(event) => setIsImageManagerOpen(event.currentTarget.open)} open={isImageManagerOpen}>
         <summary className="list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
           <div className="flex items-center justify-between gap-4">
-            <div>
+            <div className="flex flex-col gap-1">
               <p className="text-xs font-black tracking-[0.22em] text-slate-400">COVER IMAGE</p>
-              <h2 className="mt-1 text-xl font-bold tracking-[-0.05em] text-slate-900">대표 사진 관리</h2>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
+              <h2 className="text-xl font-bold tracking-[-0.05em] text-slate-900">대표 사진 관리</h2>
+              <p className="text-xs leading-5 text-slate-500">
                 {imagePreviews.length}/{MAX_IMAGES}장 등록됨 · 펼쳐서 사진을 추가하거나 교체하세요.
               </p>
             </div>
@@ -558,12 +558,12 @@ export function RestaurantForm({
         </div>
 
         {form.imageCandidates.length > 0 ? (
-          <div className={`${isCompact ? "mt-5 pt-4" : "mt-7 pt-6"} border-t border-slate-100`}>
-            <div>
+          <div className={`${isCompact ? "pt-4" : "pt-6"} flex flex-col gap-3 border-t border-slate-100`}>
+            <div className="flex flex-col gap-1">
               <p className="text-sm font-bold text-slate-800">네이버 장소 등록 사진</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">저장 리스트에서 가져온 공식 사진 후보입니다.</p>
+              <p className="text-xs leading-5 text-slate-400">저장 리스트에서 가져온 공식 사진 후보입니다.</p>
             </div>
-            <div className={`${isCompact ? "mt-3 gap-2" : "mt-4 gap-3"} grid grid-cols-2 sm:max-w-md sm:grid-cols-3`}>
+            <div className={`${isCompact ? "gap-2" : "gap-3"} grid grid-cols-2 sm:max-w-md sm:grid-cols-3`}>
               {form.imageCandidates.map((candidate, index) => {
                 const isSelected = selectedOfficialImages.includes(candidate);
 
@@ -589,12 +589,12 @@ export function RestaurantForm({
           </div>
         ) : null}
 
-        <div className={`${isCompact ? "mt-5 pt-4" : "mt-7 pt-6"} border-t border-slate-100`}>
+        <div className={`${isCompact ? "pt-4" : "pt-6"} flex flex-col gap-3 border-t border-slate-100`}>
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div>
+            <div className="flex flex-col gap-1">
               <p className="text-sm font-bold text-slate-800">네이버 추천 이미지</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">장소를 선택하면 자동으로 후보를 불러옵니다. 선택한 이미지는 내 Storage로 복사됩니다.</p>
-              <p className="mt-1 text-[0.68rem] leading-5 text-amber-600">사용 전에 이미지 출처와 사용 권한을 확인해 주세요.</p>
+              <p className="text-xs leading-5 text-slate-400">장소를 선택하면 자동으로 후보를 불러옵니다. 선택한 이미지는 내 Storage로 복사됩니다.</p>
+              <p className="text-[0.68rem] leading-5 text-amber-600">사용 전에 이미지 출처와 사용 권한을 확인해 주세요.</p>
             </div>
             <button
               className="h-10 rounded-xl border border-[#cbdafa] bg-[#f7faff] px-3.5 text-xs font-bold text-[#2f6fed] transition hover:border-[#9db9f5] hover:bg-[#edf3ff] disabled:cursor-not-allowed disabled:opacity-50"
@@ -608,9 +608,9 @@ export function RestaurantForm({
             </button>
           </div>
 
-          {imageSearchError ? <p className="mt-3 text-xs leading-5 text-rose-600">{imageSearchError}</p> : null}
+          {imageSearchError ? <p className="text-xs leading-5 text-rose-600">{imageSearchError}</p> : null}
           {imageCandidates.length > 0 ? (
-            <div className={`${isCompact ? "mt-3 gap-2" : "mt-4 gap-3"} grid grid-cols-2 sm:grid-cols-4`}>
+            <div className={`${isCompact ? "gap-2" : "gap-3"} grid grid-cols-2 sm:grid-cols-4`}>
               {imageCandidates.map((candidate) => {
                 const isSelected = selectedNaverImageIds.includes(candidate.id);
 
@@ -629,9 +629,9 @@ export function RestaurantForm({
                       <Image alt="" className="object-cover" fill sizes="(max-width: 640px) 50vw, 160px" src={candidate.thumbnailUrl} />
                       {isSelected ? <span className="absolute left-2 top-2 rounded-full bg-[#2f6fed] px-2 py-1 text-[0.6rem] font-bold text-white">선택됨</span> : null}
                     </div>
-                    <div className="p-2.5">
+                    <div className="flex flex-col gap-1 p-2.5">
                       <p className="truncate text-[0.68rem] font-bold text-slate-700">{candidate.title || "네이버 이미지"}</p>
-                      {candidate.width && candidate.height ? <p className="mt-1 text-[0.6rem] text-slate-400">{candidate.width} × {candidate.height}</p> : null}
+                      {candidate.width && candidate.height ? <p className="text-[0.6rem] text-slate-400">{candidate.width} × {candidate.height}</p> : null}
                     </div>
                   </button>
                 );

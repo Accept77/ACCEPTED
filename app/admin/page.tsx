@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
-import { AdminDashboard } from "@/app/_components/admin-dashboard";
-import { getAdminRestaurantPage, type AdminRestaurantFilters, type AdminVisitFilter, type AdminVisibilityFilter } from "@/lib/data/restaurants";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { AdminDashboard } from "@/widgets/admin-dashboard/ui/admin-dashboard";
+import { getAdminRestaurantPage, type AdminRestaurantFilters, type AdminVisitFilter, type AdminVisibilityFilter } from "@/entities/restaurant/api/restaurants";
+import { requireAdmin } from "@/shared/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
 

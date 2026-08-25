@@ -3,9 +3,9 @@
 import { MapPinned, Utensils, X } from "lucide-react";
 import { createElement } from "react";
 
-import { categoryIcon } from "@/lib/category-display";
-import { getLocationHierarchy } from "@/lib/locations";
-import type { RestaurantSummary } from "@/lib/types";
+import { categoryIcon } from "@/entities/restaurant/model/category-display";
+import { getLocationHierarchy } from "@/entities/restaurant/model/locations";
+import type { RestaurantSummary } from "@/entities/restaurant/model/types";
 
 type RestaurantRecommendationModalProps = {
   candidates: RestaurantSummary[];
@@ -43,15 +43,15 @@ export function RestaurantRecommendationModal({
       role="dialog"
     >
       <div className="max-h-[92vh] w-full max-w-md overflow-hidden rounded-t-[2rem] bg-white shadow-2xl sm:rounded-[2rem]">
-        <div className="relative overflow-hidden bg-[#eef5ff] px-6 pb-7 pt-6">
+        <div className="relative flex flex-col gap-6 overflow-hidden bg-[#eef5ff] px-6 pb-7 pt-6">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-xs font-black tracking-[0.18em] text-[#2f6fed]">
                 <Utensils aria-hidden="true" className="h-4 w-4" strokeWidth={2.1} />
                 TODAY&apos;S PICK
               </div>
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.07em] text-slate-900">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+              <h2 className="text-3xl font-black tracking-[-0.07em] text-slate-900">{title}</h2>
+              <p className="text-sm leading-6 text-slate-500">
                 {isDrawing ? "오늘의 맛집을 고르는 중이에요." : `${recommendations.length}곳을 골랐어요. 원하는 식당을 골라보세요.`}
               </p>
             </div>
@@ -66,11 +66,11 @@ export function RestaurantRecommendationModal({
             </button>
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-3xl border border-white/80 bg-white/75 p-3 shadow-[0_16px_45px_-28px_rgba(20,32,51,0.55)]">
+          <div className="overflow-hidden rounded-3xl border border-white/80 bg-white/75 p-3 shadow-[0_16px_45px_-28px_rgba(20,32,51,0.55)]">
             {isDrawing ? (
               <div aria-live="polite" className="relative h-52 overflow-hidden rounded-2xl">
                 {reelCandidates.length > 0 ? (
-                  <div className="slot-machine-strip space-y-2">
+                  <div className="slot-machine-strip flex flex-col gap-2">
                     {reelCandidates.map((restaurant, index) => {
                   const CandidateIcon = categoryIcon(restaurant.category);
                   return (
@@ -82,9 +82,9 @@ export function RestaurantRecommendationModal({
                       <span className="slot-reel-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#edf3ff] text-[#2f6fed]">
                         {createElement(CandidateIcon, { "aria-hidden": "true", className: "h-5 w-5", strokeWidth: 1.8 })}
                       </span>
-                      <span className="min-w-0">
+                      <span className="flex min-w-0 flex-col gap-1">
                         <span className="block truncate text-sm font-bold text-slate-800">{restaurant.name}</span>
-                        <span className="mt-0.5 block truncate text-xs text-slate-400">{locationLabel(restaurant)}</span>
+                        <span className="block truncate text-xs text-slate-400">{locationLabel(restaurant)}</span>
                       </span>
                     </div>
                   );
@@ -97,7 +97,7 @@ export function RestaurantRecommendationModal({
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white via-white/70 to-transparent" />
               </div>
             ) : recommendations.length > 0 ? (
-              <div className="max-h-[46vh] space-y-2 overflow-y-auto pr-1">
+              <div className="flex max-h-[46vh] flex-col gap-2 overflow-y-auto pr-1">
                 {recommendations.map((restaurant, index) => {
                   const CandidateIcon = categoryIcon(restaurant.category);
 
@@ -113,14 +113,14 @@ export function RestaurantRecommendationModal({
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edf3ff] text-[#2f6fed]">
                         {createElement(CandidateIcon, { "aria-hidden": "true", className: "h-5 w-5", strokeWidth: 1.8 })}
                       </span>
-                      <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="block truncate text-sm font-bold text-slate-800">
                           {index + 1}. {restaurant.name}
                         </span>
-                        <span className="mt-0.5 block truncate text-xs text-slate-400">
+                        <span className="block truncate text-xs text-slate-400">
                           {restaurant.category} · {locationLabel(restaurant)}
                         </span>
-                        {restaurant.memo ? <span className="mt-1 block line-clamp-1 text-xs text-slate-500">{restaurant.memo}</span> : null}
+                        {restaurant.memo ? <span className="block line-clamp-1 text-xs text-slate-500">{restaurant.memo}</span> : null}
                       </span>
                       <span aria-hidden="true" className="shrink-0 text-xl leading-none text-slate-300">
                         ›
@@ -130,9 +130,9 @@ export function RestaurantRecommendationModal({
                 })}
               </div>
             ) : (
-              <div className="flex min-h-28 flex-col items-center justify-center text-center">
+              <div className="flex min-h-28 flex-col items-center justify-center gap-3 text-center">
                 <MapPinned aria-hidden="true" className="h-8 w-8 text-slate-400" strokeWidth={1.7} />
-                <p className="mt-3 text-sm font-bold text-slate-600">현재 조건에 맞는 식당이 없어요.</p>
+                <p className="text-sm font-bold text-slate-600">현재 조건에 맞는 식당이 없어요.</p>
               </div>
             )}
           </div>

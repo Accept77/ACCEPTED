@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getNaverApiConfig } from "@/lib/config";
-import { isTrustedNaverImageUrl } from "@/lib/naver-images";
-import { getAdminStatus } from "@/lib/supabase/auth";
-import type { NaverImageCandidate } from "@/lib/types";
+import { getNaverApiConfig } from "@/shared/lib/config";
+import { isTrustedNaverImageUrl } from "@/shared/lib/naver-images";
+import { getAdminStatus } from "@/shared/lib/supabase/auth";
+import type { NaverImageCandidate } from "@/entities/restaurant/model/types";
 
 export const runtime = "nodejs";
 

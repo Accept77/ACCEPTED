@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { NaverMap, type RestaurantMapProps } from "@/app/_components/naver-map";
+import { NaverMap, type RestaurantMapProps } from "@/features/restaurant-explorer/ui/naver-map";
 
 export type { RestaurantMapProps };
 

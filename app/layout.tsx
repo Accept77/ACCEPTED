@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "pretendard/dist/web/variable/pretendardvariable.css";
 
-import { SITE_TITLE } from "@/lib/constants";
+import { SITE_TITLE } from "@/shared/lib/constants";
 
 import "./globals.css";
 

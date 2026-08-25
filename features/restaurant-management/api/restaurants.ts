@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
-import { storeNaverImage } from "@/lib/naver-image-storage";
-import { isTrustedNaverImageUrl } from "@/lib/naver-images";
-import { deleteR2Objects } from "@/lib/r2/server";
-import { requireAdmin } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
-import type { NaverSavedPlace, RestaurantInput } from "@/lib/types";
+import { storeNaverImage } from "@/shared/lib/naver-image-storage";
+import { isTrustedNaverImageUrl } from "@/shared/lib/naver-images";
+import { deleteR2Objects } from "@/shared/lib/r2/server";
+import { requireAdmin } from "@/shared/lib/supabase/auth";
+import { createClient } from "@/shared/lib/supabase/server";
+import type { NaverSavedPlace, RestaurantInput } from "@/entities/restaurant/model/types";
 
 const MAX_IMPORT_COUNT = 5000;
 const DUPLICATE_CHECK_BATCH_SIZE = 50;
