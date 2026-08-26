@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Form from "next/form";
 import Link from "next/link";
 import { MapPinned, UtensilsCrossed } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -226,7 +227,7 @@ export function AdminDashboard({
               </div>
             </div>
 
-            <form action="/admin" className="grid shrink-0 gap-2 border-b border-slate-100 bg-slate-50/70 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] sm:px-4" method="get">
+            <Form action="/admin" className="grid shrink-0 gap-2 border-b border-slate-100 bg-slate-50/70 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] sm:px-4" replace scroll={false}>
               <label className="flex h-11 min-w-0 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-400 sm:h-9">
                 <span className="sr-only">맛집 검색</span>
                 <input
@@ -253,7 +254,7 @@ export function AdminDashboard({
               <button className="h-11 rounded-xl bg-[#142033] px-4 text-xs font-bold text-white transition hover:bg-slate-700 sm:h-9" type="submit">
                 검색
               </button>
-            </form>
+            </Form>
 
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-3 py-2 text-xs sm:px-4">
               <p className="font-semibold text-slate-500">현재 조건 <span className="font-black text-[#2f6fed]">{filteredCount.toLocaleString("ko-KR")}</span>곳</p>

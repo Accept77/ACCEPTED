@@ -28,7 +28,7 @@ export default async function EditRestaurantPage({ params }: EditRestaurantPageP
   return (
     <main className="h-[100dvh] w-[100dvw] overflow-hidden bg-[#eef2f5]">
       <div className="safe-area-bottom flex h-full justify-center overflow-y-auto">
-        <div className="flex w-full max-w-5xl flex-col gap-5 px-4 pb-10 pt-5 sm:px-6 sm:pt-7">
+        <div className="flex w-full max-w-screen-2xl flex-col gap-5 px-4 pb-10 pt-5 sm:px-6 sm:pt-7 lg:px-8 lg:pt-8">
         <div className="flex flex-col gap-2">
           <p className="text-xs font-black tracking-[0.22em] text-[#2f6fed]">EDIT PLACE</p>
           <h1 className="text-3xl font-bold tracking-[-0.08em] text-[#142033]">맛집 정보를 수정하세요.</h1>

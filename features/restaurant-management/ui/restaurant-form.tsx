@@ -358,8 +358,16 @@ export function RestaurantForm({
         await updateRestaurant(initialRestaurant.id, payload);
       }
 
-      router.push("/admin");
-      router.refresh();
+      const canReturnToPreviousPage =
+        typeof window !== "undefined" &&
+        window.history.length > 1 &&
+        document.referrer.startsWith(window.location.origin);
+
+      if (canReturnToPreviousPage) {
+        router.back();
+      } else {
+        router.replace("/admin");
+      }
     } catch (actionError) {
       setFormError(actionError instanceof Error ? actionError.message : "저장하지 못했습니다.");
     } finally {
@@ -375,8 +383,8 @@ export function RestaurantForm({
   const fieldClass = isCompact ? compactInputClass : inputClass;
 
   return (
-    <form className={isCompact ? "flex flex-col gap-4" : "flex flex-col gap-8"} onSubmit={handleSubmit}>
-      <details className={`${formSectionClass} flex flex-col gap-3`} onToggle={(event) => setIsPlaceSearchOpen(event.currentTarget.open)} open={isPlaceSearchOpen}>
+    <form className={isCompact ? "grid gap-4 lg:grid-cols-2 lg:gap-5" : "grid gap-8 lg:grid-cols-2 lg:gap-6"} onSubmit={handleSubmit}>
+      <details className={`${formSectionClass} flex min-w-0 flex-col gap-3 lg:col-span-2`} onToggle={(event) => setIsPlaceSearchOpen(event.currentTarget.open)} open={isPlaceSearchOpen}>
         <summary className="list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div className="flex flex-col gap-2">
@@ -430,7 +438,7 @@ export function RestaurantForm({
         ) : null}
       </details>
 
-      <section className={`${formSectionClass} flex flex-col gap-4`}>
+      <section className={`${formSectionClass} flex min-w-0 flex-col gap-4`}>
         <div className="flex flex-col gap-2">
           <p className="text-xs font-black tracking-[0.22em] text-slate-400">CURATION DETAILS</p>
           <h2 className="text-xl font-bold tracking-[-0.05em] text-slate-900">나만의 설명을 더해보세요.</h2>
@@ -511,7 +519,7 @@ export function RestaurantForm({
         </div>
       </section>
 
-      <details className={`${formSectionClass} flex flex-col gap-4`} onToggle={(event) => setIsImageManagerOpen(event.currentTarget.open)} open={isImageManagerOpen}>
+      <details className={`${formSectionClass} flex min-w-0 flex-col gap-4`} onToggle={(event) => setIsImageManagerOpen(event.currentTarget.open)} open={isImageManagerOpen}>
         <summary className="list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
@@ -526,7 +534,7 @@ export function RestaurantForm({
         </summary>
 
         <div className={`${contentSpacingClass} flex flex-col gap-4 sm:flex-row sm:items-start`}>
-          <div className={`grid w-full gap-2 ${imagePreviews.length === 1 ? "max-w-xs grid-cols-1" : "max-w-sm grid-cols-2"}`}>
+          <div className={`grid w-full gap-2 ${imagePreviews.length === 1 ? "max-w-xs grid-cols-1 lg:max-w-sm" : "max-w-sm grid-cols-2 lg:max-w-none"}`}>
             {imagePreviews.length > 0 ? (
               imagePreviews.map((imageUrl, index) => (
                 <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#edf3ff]" key={`${imageUrl}-${index}`}>
@@ -563,7 +571,7 @@ export function RestaurantForm({
               <p className="text-sm font-bold text-slate-800">네이버 장소 등록 사진</p>
               <p className="text-xs leading-5 text-slate-400">저장 리스트에서 가져온 공식 사진 후보입니다.</p>
             </div>
-            <div className={`${isCompact ? "gap-2" : "gap-3"} grid grid-cols-2 sm:max-w-md sm:grid-cols-3`}>
+            <div className={`${isCompact ? "gap-2" : "gap-3"} grid grid-cols-2 sm:max-w-md sm:grid-cols-3 lg:max-w-none`}>
               {form.imageCandidates.map((candidate, index) => {
                 const isSelected = selectedOfficialImages.includes(candidate);
 
@@ -641,9 +649,9 @@ export function RestaurantForm({
         </div>
       </details>
 
-      {formError ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-600" role="alert">{formError}</p> : null}
+      {formError ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-600 lg:col-span-2" role="alert">{formError}</p> : null}
 
-      <div className={isCompact ? "sticky bottom-3 z-10 flex flex-col-reverse gap-2 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:justify-end" : "flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"}>
+      <div className={isCompact ? "sticky bottom-3 z-10 flex flex-col-reverse gap-2 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:justify-end lg:col-span-2" : "flex flex-col-reverse gap-3 sm:flex-row sm:justify-end lg:col-span-2"}>
         <Link className={`${isCompact ? "h-11 rounded-xl px-4" : "h-13 rounded-2xl px-5"} flex items-center justify-center border border-slate-200 bg-white text-sm font-bold text-slate-600 transition hover:border-slate-300`} href="/admin">
           취소
         </Link>

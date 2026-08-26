@@ -57,6 +57,7 @@ const ALL_DISTRICTS = "전체 구/군";
 const ALL_TAGS = "전체 분류";
 const LIST_BATCH_SIZE = 50;
 const NEARBY_RADIUS_OPTIONS = [1, 3, 5] as const;
+const DEFAULT_NEARBY_RADIUS_KM = 3;
 
 type LocationStatus = "idle" | "locating" | "ready" | "error";
 
@@ -951,6 +952,7 @@ export function RestaurantExplorer({
           longitude: coords.longitude,
         });
         setActiveRestaurantId(null);
+        setNearbyRadiusKm(DEFAULT_NEARBY_RADIUS_KM);
         setVisibleCount(LIST_BATCH_SIZE);
         setLocationStatus("ready");
       },
@@ -1338,7 +1340,7 @@ export function RestaurantExplorer({
             <div className="flex items-center gap-2">
               {activeFilterCount > 0 ? (
                 <button
-                  className="min-h-11 shrink-0 px-1 text-xs font-bold text-slate-400 hover:text-slate-800 lg:min-h-0"
+                  className="min-h-11 shrink-0 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 ring-1 ring-inset ring-rose-200 transition hover:bg-rose-100 hover:text-rose-700 lg:min-h-0"
                   onClick={resetFilters}
                   type="button"
                 >
