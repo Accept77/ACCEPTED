@@ -1,0 +1,16 @@
+@import "../../app/globals.css";
+
+@source "../../app";
+@source "../../entities";
+@source "../../features";
+@source "../../shared";
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  overflow: hidden;
+}

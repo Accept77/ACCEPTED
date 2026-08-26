@@ -6,7 +6,12 @@ import {
 import { isSupabaseConfigured } from "@/shared/lib/config";
 import { getR2PublicUrl } from "@/shared/lib/r2/server";
 import { createClient } from "@/shared/lib/supabase/server";
-import type { Database, Restaurant, RestaurantSummary } from "@/entities/restaurant/model/types";
+import type {
+  Database,
+  PublicRestaurantIndex,
+  Restaurant,
+  RestaurantSummary,
+} from "@/entities/restaurant/model/types";
 
 type RestaurantRow = Database["public"]["Tables"]["restaurants"]["Row"];
 type PublicRestaurantRow = Pick<
@@ -107,11 +112,6 @@ function restaurantToSummary(restaurant: Restaurant): RestaurantSummary {
     longitude: restaurant.longitude,
   };
 }
-
-export type PublicRestaurantIndex = {
-  restaurants: RestaurantSummary[];
-  totalCount: number;
-};
 
 export async function getPublicRestaurantIndex(): Promise<PublicRestaurantIndex> {
   if (!isSupabaseConfigured()) {

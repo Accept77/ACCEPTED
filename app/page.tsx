@@ -1,6 +1,6 @@
 import Script from "next/script";
 
-import { RestaurantExplorer } from "@/features/restaurant-explorer/ui/restaurant-explorer";
+import { HomeClient } from "@/app/home-client";
 import { getPublicRestaurantIndex } from "@/entities/restaurant/api/restaurants";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export default async function Home() {
 
   return (
     <>
-      <RestaurantExplorer restaurants={restaurants} totalCount={totalCount} />
+      <HomeClient restaurants={restaurants} totalCount={totalCount} />
       {gaMeasurementId ? (
         <>
           <Script

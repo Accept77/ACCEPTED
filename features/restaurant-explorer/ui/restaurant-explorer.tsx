@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   ChevronDown,
   ChevronUp,
@@ -12,7 +11,9 @@ import {
 } from "lucide-react";
 import {
   createElement,
+  lazy,
   memo,
+  Suspense,
   type ReactNode,
   useCallback,
   useEffect,
@@ -22,7 +23,6 @@ import {
   useState,
 } from "react";
 
-import { RestaurantMap } from "@/features/restaurant-explorer/ui/restaurant-map";
 import { RestaurantRecommendationModal } from "@/features/restaurant-explorer/ui/restaurant-recommendation-modal";
 import { RestaurantFilterControls } from "@/features/restaurant-explorer/ui/restaurant-filter-controls";
 import { categoryIcon } from "@/entities/restaurant/model/category-display";
@@ -38,15 +38,31 @@ import {
   matchesRestaurantTags,
   type VisitFilter,
 } from "@/entities/restaurant/model/restaurant-filters";
+import { getExplorerApiUrl } from "@/features/restaurant-explorer/model/api";
+import {
+  isExplorerShareCancellation,
+  type ExplorerImageComponent,
+  type ExplorerPlatform,
+} from "@/features/restaurant-explorer/model/platform";
 import type {
   Restaurant,
   RestaurantSummary,
 } from "@/entities/restaurant/model/types";
 
-type RestaurantExplorerProps = {
+export type RestaurantExplorerProps = {
   restaurants: RestaurantSummary[];
   totalCount: number;
+  apiBaseUrl?: string;
+  imageComponent: ExplorerImageComponent;
+  mapClientId?: string;
+  platform: ExplorerPlatform;
 };
+
+const RestaurantMap = lazy(() =>
+  import("@/features/restaurant-explorer/ui/restaurant-map").then(
+    ({ RestaurantMap: Map }) => ({ default: Map }),
+  ),
+);
 
 const placeholderStyles = [
   "linear-gradient(135deg, #dce7f7 0%, #f7e9d8 100%)",
@@ -240,6 +256,7 @@ const RestaurantListItem = memo(function RestaurantListItem({
   index,
   isSelected,
   distance,
+  imageComponent: ImageComponent,
   onOpen,
   onSelect,
 }: {
@@ -247,6 +264,7 @@ const RestaurantListItem = memo(function RestaurantListItem({
   index: number;
   isSelected: boolean;
   distance: number | null;
+  imageComponent: ExplorerImageComponent;
   onOpen: (restaurant: RestaurantSummary) => void;
   onSelect: (id: string) => void;
 }) {
@@ -273,7 +291,7 @@ const RestaurantListItem = memo(function RestaurantListItem({
       >
         <div className="relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-xl bg-[#edf3ff]">
           {restaurant.imageUrl ? (
-            <Image
+            <ImageComponent
               alt={`${restaurant.name} 대표 이미지`}
               className="object-cover"
               fill
@@ -348,9 +366,13 @@ const RestaurantListItem = memo(function RestaurantListItem({
 
 function RestaurantDetail({
   restaurant,
+  imageComponent: ImageComponent,
+  platform,
   onClose,
 }: {
   restaurant: Restaurant;
+  imageComponent: ExplorerImageComponent;
+  platform: ExplorerPlatform;
   onClose: () => void;
 }) {
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">("idle");
@@ -375,27 +397,18 @@ function RestaurantDetail({
 
   async function handleShare() {
     const shareText = [restaurant.name, restaurant.address].filter(Boolean).join("\n");
-    const clipboardText = `${shareText}\n${restaurant.naverUrl}`;
 
     setShareStatus("idle");
 
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({
-          title: `${restaurant.name} | 배고프면 진수에게`,
-          text: shareText,
-          url: restaurant.naverUrl,
-        });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-
     try {
-      await navigator.clipboard.writeText(clipboardText);
-      setShareStatus("copied");
-    } catch {
+      const result = await platform.share({
+        title: `${restaurant.name} | 배고프면 진수에게`,
+        text: shareText,
+        url: restaurant.naverUrl,
+      });
+      if (result === "copied") setShareStatus("copied");
+    } catch (error) {
+      if (isExplorerShareCancellation(error)) return;
       setShareStatus("error");
     }
   }
@@ -423,7 +436,7 @@ function RestaurantDetail({
                   }
                   key={imageUrl}
                 >
-                  <Image
+                  <ImageComponent
                     alt={`${restaurant.name} 사진 ${index + 1}`}
                     className="object-cover"
                     fill
@@ -480,6 +493,19 @@ function RestaurantDetail({
               <a
                 className="underline underline-offset-2 transition hover:text-slate-600"
                 href={restaurant.imageSourceUrl}
+                onClick={(event) => {
+                  if (!platform.openExternalUrl) return;
+                  event.preventDefault();
+                  void platform.openExternalUrl(restaurant.imageSourceUrl!).catch(
+                    () => {
+                      window.open(
+                        restaurant.imageSourceUrl!,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                    },
+                  );
+                }}
                 rel="noreferrer"
                 target="_blank"
               >
@@ -509,6 +535,13 @@ function RestaurantDetail({
             <a
               className="flex h-13 min-w-0 items-center justify-center gap-2 rounded-2xl bg-[#2f6fed] px-4 text-sm font-bold text-white transition hover:bg-[#255ac8]"
               href={restaurant.naverUrl}
+              onClick={(event) => {
+                if (!platform.openExternalUrl) return;
+                event.preventDefault();
+                void platform.openExternalUrl(restaurant.naverUrl).catch(() => {
+                  window.open(restaurant.naverUrl, "_blank", "noopener,noreferrer");
+                });
+              }}
               rel="noreferrer"
               target="_blank"
             >
@@ -591,12 +624,17 @@ function MobileFilterModal({
   );
 }
 
-function getLocationErrorMessage(error: GeolocationPositionError) {
-  if (error.code === error.PERMISSION_DENIED)
+function getLocationErrorMessage(error: unknown) {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? Number(error.code)
+      : null;
+
+  if (code === 1)
     return "위치 권한이 거부됐어요. 브라우저 설정에서 허용해 주세요.";
-  if (error.code === error.POSITION_UNAVAILABLE)
+  if (code === 2)
     return "현재 위치를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.";
-  if (error.code === error.TIMEOUT)
+  if (code === 3)
     return "위치 확인이 오래 걸리고 있어요. 다시 시도해 주세요.";
   return "현재 위치를 확인하지 못했어요. 다시 시도해 주세요.";
 }
@@ -663,6 +701,10 @@ function RestaurantDetailStatus({
 export function RestaurantExplorer({
   restaurants,
   totalCount,
+  apiBaseUrl,
+  imageComponent,
+  mapClientId,
+  platform,
 }: RestaurantExplorerProps) {
   const [search, setSearch] = useState("");
   const [searchResetKey, setSearchResetKey] = useState(0);
@@ -947,7 +989,10 @@ export function RestaurantExplorer({
 
     try {
       const response = await fetch(
-        `/api/restaurants/${encodeURIComponent(restaurant.id)}`,
+        getExplorerApiUrl(
+          apiBaseUrl,
+          `/api/restaurants/${encodeURIComponent(restaurant.id)}`,
+        ),
         {
           cache: "no-store",
         },
@@ -972,7 +1017,7 @@ export function RestaurantExplorer({
     } finally {
       if (detailRequestIdRef.current === requestId) setIsDetailLoading(false);
     }
-  }, []);
+  }, [apiBaseUrl]);
 
   function closeRestaurant() {
     detailRequestIdRef.current += 1;
@@ -982,38 +1027,22 @@ export function RestaurantExplorer({
     setIsDetailLoading(false);
   }
 
-  function requestUserLocation() {
+  async function requestUserLocation() {
     setLocationError("");
 
-    if (!navigator.geolocation) {
-      setLocationStatus("error");
-      setLocationError("이 브라우저에서는 현재 위치를 사용할 수 없어요.");
-      return;
-    }
-
     setLocationStatus("locating");
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setUserLocation({
-          accuracy: coords.accuracy,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        });
-        setActiveRestaurantId(null);
-        setNearbyRadiusKm(DEFAULT_NEARBY_RADIUS_KM);
-        setVisibleCount(LIST_BATCH_SIZE);
-        setLocationStatus("ready");
-      },
-      (error) => {
-        setLocationStatus("error");
-        setLocationError(getLocationErrorMessage(error));
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 30_000,
-        timeout: 10_000,
-      },
-    );
+
+    try {
+      const location = await platform.getCurrentLocation();
+      setUserLocation(location);
+      setActiveRestaurantId(null);
+      setNearbyRadiusKm(DEFAULT_NEARBY_RADIUS_KM);
+      setVisibleCount(LIST_BATCH_SIZE);
+      setLocationStatus("ready");
+    } catch (error) {
+      setLocationStatus("error");
+      setLocationError(getLocationErrorMessage(error));
+    }
   }
 
   function resetFilters() {
@@ -1407,6 +1436,7 @@ export function RestaurantExplorer({
                 {visibleRestaurants.map((restaurant, index) => (
                   <RestaurantListItem
                     distance={restaurantDistances.get(restaurant.id) ?? null}
+                    imageComponent={imageComponent}
                     index={index}
                     isSelected={selectedIdForView === restaurant.id}
                     key={restaurant.id}
@@ -1520,12 +1550,21 @@ export function RestaurantExplorer({
         <section
           className={`relative order-1 ${isMobileListCollapsed ? "h-[calc(100dvh-3.5rem)]" : "h-[40dvh]"} min-h-0 min-w-0 w-full overflow-hidden border-b border-slate-200/80 bg-white lg:order-2 lg:h-full lg:flex-1 lg:border-b-0`}
         >
-          <RestaurantMap
-            onSelect={selectRestaurant}
-            restaurants={filteredRestaurants}
-            selectedId={selectedIdForView}
-            userLocation={userLocation}
-          />
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center bg-[#e8eef5] text-sm font-semibold text-slate-500">
+                지도를 준비하고 있어요.
+              </div>
+            }
+          >
+            <RestaurantMap
+              mapClientId={mapClientId}
+              onSelect={selectRestaurant}
+              restaurants={filteredRestaurants}
+              selectedId={selectedIdForView}
+              userLocation={userLocation}
+            />
+          </Suspense>
           <div className="absolute bottom-5 right-4 z-40 flex flex-col items-end gap-2 sm:right-5">
             {locationError ? (
               <p
@@ -1544,7 +1583,7 @@ export function RestaurantExplorer({
                     : "bg-white/95 text-slate-700"
                 }`}
                 disabled={locationStatus === "locating"}
-                onClick={requestUserLocation}
+                onClick={() => void requestUserLocation()}
                 title={
                   locationStatus === "ready"
                     ? "현재 위치를 다시 확인"
@@ -1604,7 +1643,9 @@ export function RestaurantExplorer({
 
       {selectedRestaurant ? (
         <RestaurantDetail
+          imageComponent={imageComponent}
           onClose={closeRestaurant}
+          platform={platform}
           restaurant={selectedRestaurant}
         />
       ) : selectedRestaurantSummary ? (

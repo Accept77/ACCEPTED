@@ -37,6 +37,11 @@ export type RestaurantSummary = {
   longitude: number | null;
 };
 
+export type PublicRestaurantIndex = {
+  restaurants: RestaurantSummary[];
+  totalCount: number;
+};
+
 export type RestaurantInput = {
   hasVisited: boolean;
   name: string;

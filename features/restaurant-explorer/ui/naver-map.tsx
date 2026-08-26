@@ -31,6 +31,7 @@ import type { RestaurantSummary } from "@/entities/restaurant/model/types";
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 
 export type RestaurantMapProps = {
+  mapClientId?: string;
   restaurants: RestaurantSummary[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -421,12 +422,13 @@ function MapContent({
 }
 
 export function NaverMap({
+  mapClientId: providedMapClientId,
   restaurants,
   selectedId,
   onSelect,
   userLocation,
 }: RestaurantMapProps) {
-  const mapClientId = getNaverMapClientId();
+  const mapClientId = providedMapClientId ?? getNaverMapClientId();
   const mappableCount = restaurants.filter(
     (restaurant) =>
       restaurant.latitude !== null && restaurant.longitude !== null,
