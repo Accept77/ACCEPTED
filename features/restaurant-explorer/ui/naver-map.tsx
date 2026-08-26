@@ -7,6 +7,7 @@ import {
   type ComponentProps,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -18,6 +19,7 @@ import {
   Marker,
   NaverMap as ReactNaverMap,
   NavermapsProvider,
+  useMap,
   useNavermaps,
 } from "react-naver-maps";
 
@@ -147,6 +149,39 @@ const USER_LOCATION_ICON: MarkerIcon = {
   content: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#2f6fed" fill-opacity=".18"/><circle cx="16" cy="16" r="7" fill="#2f6fed" stroke="#ffffff" stroke-width="3"/></svg>`,
   size: { height: 32, width: 32 },
 };
+
+function MapResizeObserver() {
+  const map = useMap();
+
+  useEffect(() => {
+    const mapElement = map.getElement();
+
+    if (typeof ResizeObserver === "undefined") {
+      map.autoResize();
+      return;
+    }
+
+    let frameId: number | null = null;
+    const resizeObserver = new ResizeObserver(() => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        map.autoResize();
+      });
+    });
+
+    resizeObserver.observe(mapElement);
+    map.autoResize();
+
+    return () => {
+      resizeObserver.disconnect();
+      if (frameId !== null) cancelAnimationFrame(frameId);
+    };
+  }, [map]);
+
+  return null;
+}
 
 function escapeSvgText(value: string) {
   return value.replace(
@@ -348,6 +383,7 @@ function MapContent({
       onZoomChanged={handleZoomChanged}
       zoomControl
     >
+      <MapResizeObserver />
       {userLocation ? (
         <>
           <Circle
