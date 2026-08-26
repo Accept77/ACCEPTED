@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { RestaurantForm } from "@/features/restaurant-management/ui/restaurant-form";
+import { normalizeAdminReturnPath } from "@/features/restaurant-management/model/admin-return-path";
 import { isSupabaseConfigured } from "@/shared/lib/config";
 import { getRestaurantById } from "@/entities/restaurant/api/restaurants";
 import { isR2Configured } from "@/shared/lib/r2/server";
@@ -16,12 +17,14 @@ export const metadata: Metadata = {
 
 type EditRestaurantPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string | string[] }>;
 };
 
-export default async function EditRestaurantPage({ params }: EditRestaurantPageProps) {
+export default async function EditRestaurantPage({ params, searchParams }: EditRestaurantPageProps) {
   await requireAdmin();
-  const { id } = await params;
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const restaurant = await getRestaurantById(id);
+  const returnTo = normalizeAdminReturnPath(query.returnTo);
 
   if (!restaurant) notFound();
 
@@ -34,7 +37,7 @@ export default async function EditRestaurantPage({ params }: EditRestaurantPageP
           <h1 className="text-3xl font-bold tracking-[-0.08em] text-[#142033]">맛집 정보를 수정하세요.</h1>
           <p className="text-sm leading-6 text-slate-500">공개 페이지에 보여줄 정보를 빠르게 정리하고 저장하세요.</p>
         </div>
-        <RestaurantForm initialRestaurant={restaurant} isConfigured={isSupabaseConfigured()} isStorageConfigured={isR2Configured()} mode="edit" />
+        <RestaurantForm initialRestaurant={restaurant} isConfigured={isSupabaseConfigured()} isStorageConfigured={isR2Configured()} mode="edit" returnTo={returnTo} />
         </div>
       </div>
     </main>

@@ -50,11 +50,13 @@ export function RestaurantForm({
   initialRestaurant,
   isConfigured,
   isStorageConfigured,
+  returnTo = "/admin",
 }: {
   mode: "create" | "edit";
   initialRestaurant?: Restaurant;
   isConfigured: boolean;
   isStorageConfigured: boolean;
+  returnTo?: string;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<RestaurantInput>(() =>
@@ -92,7 +94,6 @@ export function RestaurantForm({
         : [],
   );
   const [isPlaceSearchOpen, setIsPlaceSearchOpen] = useState(mode === "create");
-  const [isImageManagerOpen, setIsImageManagerOpen] = useState(mode === "create" || imagePreviews.length === 0);
   const [selectedOfficialImages, setSelectedOfficialImages] = useState<string[]>([]);
   const [selectedNaverImageIds, setSelectedNaverImageIds] = useState<string[]>([]);
   const [imageCandidates, setImageCandidates] = useState<NaverImageCandidate[]>([]);
@@ -369,16 +370,7 @@ export function RestaurantForm({
         await updateRestaurant(initialRestaurant.id, payload);
       }
 
-      const canReturnToPreviousPage =
-        typeof window !== "undefined" &&
-        window.history.length > 1 &&
-        document.referrer.startsWith(window.location.origin);
-
-      if (canReturnToPreviousPage) {
-        router.back();
-      } else {
-        router.replace("/admin");
-      }
+      router.replace(returnTo);
     } catch (actionError) {
       setFormError(actionError instanceof Error ? actionError.message : "저장하지 못했습니다.");
     } finally {
@@ -530,19 +522,14 @@ export function RestaurantForm({
         </div>
       </section>
 
-      <details className={`${formSectionClass} flex min-w-0 flex-col gap-4`} onToggle={(event) => setIsImageManagerOpen(event.currentTarget.open)} open={isImageManagerOpen}>
-        <summary className="list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-black tracking-[0.22em] text-slate-400">COVER IMAGE</p>
-              <h2 className="text-xl font-bold tracking-[-0.05em] text-slate-900">대표 사진 관리</h2>
-              <p className="text-xs leading-5 text-slate-500">
-                {imagePreviews.length}/{MAX_IMAGES}장 등록됨 · 펼쳐서 사진을 추가하거나 교체하세요.
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">열기</span>
-          </div>
-        </summary>
+      <section className={`${formSectionClass} flex min-w-0 flex-col gap-4`}>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-black tracking-[0.22em] text-slate-400">COVER IMAGE</p>
+          <h2 className="text-xl font-bold tracking-[-0.05em] text-slate-900">대표 사진 관리</h2>
+          <p className="text-xs leading-5 text-slate-500">
+            {imagePreviews.length}/{MAX_IMAGES}장 등록됨 · 사진을 추가하거나 교체하세요.
+          </p>
+        </div>
 
         <div className={`${contentSpacingClass} flex flex-col gap-4 sm:flex-row sm:items-start`}>
           <div className={`grid w-full gap-2 ${imagePreviews.length === 1 ? "max-w-xs grid-cols-1 lg:max-w-sm" : "max-w-sm grid-cols-2 lg:max-w-none"}`}>
@@ -658,12 +645,12 @@ export function RestaurantForm({
             </div>
           ) : null}
         </div>
-      </details>
+      </section>
 
       {formError ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-600 lg:col-span-2" role="alert">{formError}</p> : null}
 
       <div className={isCompact ? "sticky bottom-3 z-10 flex flex-col-reverse gap-2 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:justify-end lg:col-span-2" : "flex flex-col-reverse gap-3 sm:flex-row sm:justify-end lg:col-span-2"}>
-        <Link className={`${isCompact ? "h-11 rounded-xl px-4" : "h-13 rounded-2xl px-5"} flex items-center justify-center border border-slate-200 bg-white text-sm font-bold text-slate-600 transition hover:border-slate-300`} href="/admin">
+        <Link className={`${isCompact ? "h-11 rounded-xl px-4" : "h-13 rounded-2xl px-5"} flex items-center justify-center border border-slate-200 bg-white text-sm font-bold text-slate-600 transition hover:border-slate-300`} href={returnTo}>
           취소
         </Link>
         <button className={`${isCompact ? "h-11 rounded-xl px-6" : "h-13 rounded-2xl px-7"} bg-[#2f6fed] text-sm font-bold text-white shadow-lg shadow-blue-500/15 transition hover:bg-[#255ac8] disabled:cursor-not-allowed disabled:opacity-50`} disabled={isSaving || isUploading} type="submit">

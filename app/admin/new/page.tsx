@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { RestaurantForm } from "@/features/restaurant-management/ui/restaurant-form";
+import { normalizeAdminReturnPath } from "@/features/restaurant-management/model/admin-return-path";
 import { isSupabaseConfigured } from "@/shared/lib/config";
 import { isR2Configured } from "@/shared/lib/r2/server";
 import { requireAdmin } from "@/shared/lib/supabase/auth";
@@ -12,8 +13,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function NewRestaurantPage() {
+type NewRestaurantPageProps = {
+  searchParams: Promise<{ returnTo?: string | string[] }>;
+};
+
+export default async function NewRestaurantPage({ searchParams }: NewRestaurantPageProps) {
   await requireAdmin();
+  const query = await searchParams;
+  const returnTo = normalizeAdminReturnPath(query.returnTo);
 
   return (
     <main className="h-[100dvh] w-[100dvw] overflow-hidden bg-[#eef2f5]">
@@ -24,7 +31,7 @@ export default async function NewRestaurantPage() {
           <h1 className="text-4xl font-bold tracking-[-0.08em] text-[#142033]">맛집을 등록하세요.</h1>
           <p className="text-sm leading-6 text-slate-500">네이버 검색으로 기본 정보를 채운 뒤, 나만의 추천을 덧붙여 주세요.</p>
         </div>
-        <RestaurantForm isConfigured={isSupabaseConfigured()} isStorageConfigured={isR2Configured()} mode="create" />
+        <RestaurantForm isConfigured={isSupabaseConfigured()} isStorageConfigured={isR2Configured()} mode="create" returnTo={returnTo} />
         </div>
       </div>
     </main>

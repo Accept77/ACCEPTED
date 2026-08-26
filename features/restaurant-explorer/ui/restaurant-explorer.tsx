@@ -6,6 +6,7 @@ import {
   ChevronUp,
   LocateFixed,
   MapPinned,
+  Share2,
   SlidersHorizontal,
   Utensils,
 } from "lucide-react";
@@ -352,6 +353,7 @@ function RestaurantDetail({
   restaurant: Restaurant;
   onClose: () => void;
 }) {
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">("idle");
   const locationLabel = restaurantLocationLabel(restaurant);
   const visitTag = getVisitTag(restaurant.hasVisited);
   const isOfficialGallery =
@@ -370,6 +372,33 @@ function RestaurantDetail({
       : galleryImages.length === 2
         ? "grid aspect-[1.7/1] grid-cols-2 gap-1"
         : "relative aspect-[1.7/1]";
+
+  async function handleShare() {
+    const shareText = [restaurant.name, restaurant.address].filter(Boolean).join("\n");
+    const clipboardText = `${shareText}\n${restaurant.naverUrl}`;
+
+    setShareStatus("idle");
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: `${restaurant.name} | 배고프면 진수에게`,
+          text: shareText,
+          url: restaurant.naverUrl,
+        });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(clipboardText);
+      setShareStatus("copied");
+    } catch {
+      setShareStatus("error");
+    }
+  }
 
   return (
     <div
@@ -476,15 +505,34 @@ function RestaurantDetail({
             </div>
           ) : null}
 
-          <a
-            className="flex h-13 items-center justify-center gap-2 rounded-2xl bg-[#2f6fed] px-5 text-sm font-bold text-white transition hover:bg-[#255ac8]"
-            href={restaurant.naverUrl}
-            rel="noreferrer"
-            target="_blank"
-          >
-            네이버 지도에서 보기
-            <ArrowIcon />
-          </a>
+          <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-2">
+            <a
+              className="flex h-13 min-w-0 items-center justify-center gap-2 rounded-2xl bg-[#2f6fed] px-4 text-sm font-bold text-white transition hover:bg-[#255ac8]"
+              href={restaurant.naverUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              네이버 지도
+              <ArrowIcon />
+            </a>
+            <button
+              className={`flex h-13 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-bold transition ${
+                shareStatus === "error"
+                  ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+              onClick={() => {
+                void handleShare();
+              }}
+              type="button"
+            >
+              <Share2 aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+              {shareStatus === "copied" ? "복사됨" : shareStatus === "error" ? "복사 실패" : "공유하기"}
+            </button>
+          </div>
+          <p aria-live="polite" className="sr-only">
+            {shareStatus === "copied" ? "식당 정보와 네이버 지도 링크를 복사했습니다." : shareStatus === "error" ? "공유 링크를 복사하지 못했습니다." : ""}
+          </p>
         </div>
       </div>
     </div>

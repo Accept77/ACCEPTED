@@ -8,12 +8,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { deleteRestaurant, retryMissingRestaurantImages, setRestaurantVisibility } from "@/features/restaurant-management/api/restaurants";
+import { withAdminReturnPath } from "@/features/restaurant-management/model/admin-return-path";
 import { signOutAdmin } from "@/features/auth/api/actions";
 import type { AdminRestaurantFilters } from "@/entities/restaurant/api/restaurants";
 import { getVisitTag } from "@/entities/restaurant/model/restaurant-filters";
 import type { Restaurant } from "@/entities/restaurant/model/types";
 
-function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
+function AdminPlaceRow({ restaurant, returnTo }: { restaurant: Restaurant; returnTo: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -82,7 +83,7 @@ function AdminPlaceRow({ restaurant }: { restaurant: Restaurant }) {
         >
           {restaurant.isVisible ? "숨기기" : "공개"}
         </button>
-        <Link className="flex h-11 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 lg:h-8" href={`/admin/${restaurant.id}`}>
+        <Link className="flex h-11 items-center rounded-lg border border-slate-200 px-2.5 text-[0.68rem] font-bold text-slate-600 transition hover:border-slate-300 lg:h-8" href={withAdminReturnPath(`/admin/${restaurant.id}`, returnTo)}>
           수정
         </Link>
         <button
@@ -174,6 +175,7 @@ export function AdminDashboard({
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState("");
   const [isRecoveringImages, startImageRecovery] = useTransition();
+  const returnTo = adminQueryString(filters, page);
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -239,7 +241,7 @@ export function AdminDashboard({
                 <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg border border-[#dce8ff] bg-[#f7faff] px-2.5 text-[0.68rem] font-bold text-[#2f6fed] transition hover:border-[#b8cffb] lg:h-9" href="/admin/import">
                   네이버 리스트 가져오기
                 </Link>
-                <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg bg-[#2f6fed] px-3 text-[0.68rem] font-bold text-white transition hover:bg-[#255ac8] lg:h-9" href="/admin/new">
+                <Link className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg bg-[#2f6fed] px-3 text-[0.68rem] font-bold text-white transition hover:bg-[#255ac8] lg:h-9" href={withAdminReturnPath("/admin/new", returnTo)}>
                   + 맛집 등록
                 </Link>
               </div>
@@ -297,7 +299,7 @@ export function AdminDashboard({
 
             <div className="safe-area-bottom min-h-0 flex-1 overflow-y-auto">
               {restaurants.length > 0 ? (
-                restaurants.map((restaurant) => <AdminPlaceRow key={restaurant.id} restaurant={restaurant} />)
+                restaurants.map((restaurant) => <AdminPlaceRow key={restaurant.id} restaurant={restaurant} returnTo={returnTo} />)
               ) : (
                 <div className="flex min-h-64 flex-col items-center justify-center gap-3 px-6 text-center">
                   <MapPinned aria-hidden="true" className="h-9 w-9 text-[#2f6fed]" strokeWidth={1.7} />
