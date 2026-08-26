@@ -5,7 +5,7 @@ export default defineConfig({
   brand: {
     primaryColor: "#2f6fed",
   },
-  permissions: [],
+  permissions: [{ name: "geolocation", access: "access" }],
   webBundleDir: "dist",
   webView: {
     allowsBackForwardNavigationGestures: false,

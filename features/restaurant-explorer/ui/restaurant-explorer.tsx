@@ -3,6 +3,7 @@
 import {
   ChevronDown,
   ChevronUp,
+  LocateFixed,
   MapPinned,
   Share2,
   SlidersHorizontal,
@@ -25,6 +26,11 @@ import {
 import { RestaurantRecommendationModal } from "@/features/restaurant-explorer/ui/restaurant-recommendation-modal";
 import { RestaurantFilterControls } from "@/features/restaurant-explorer/ui/restaurant-filter-controls";
 import { categoryIcon } from "@/entities/restaurant/model/category-display";
+import {
+  distanceInMeters,
+  formatDistance,
+  type UserLocation,
+} from "@/shared/lib/geo";
 import { getLocationHierarchy } from "@/entities/restaurant/model/locations";
 import {
   getRestaurantDisplayTags,
@@ -67,6 +73,9 @@ const ALL_REGION = "전체 지역";
 const ALL_DISTRICTS = "전체 구/군";
 const ALL_TAGS = "전체 분류";
 const LIST_BATCH_SIZE = 50;
+const NEARBY_RADIUS_OPTIONS = [1, 3, 5] as const;
+
+type LocationStatus = "idle" | "locating" | "ready" | "error";
 
 function restaurantLocationLabel(
   restaurant: Pick<Restaurant, "address" | "area">,
@@ -245,6 +254,7 @@ const RestaurantListItem = memo(function RestaurantListItem({
   restaurant,
   index,
   isSelected,
+  distance,
   imageComponent: ImageComponent,
   onOpen,
   onSelect,
@@ -252,6 +262,7 @@ const RestaurantListItem = memo(function RestaurantListItem({
   restaurant: RestaurantSummary;
   index: number;
   isSelected: boolean;
+  distance: number | null;
   imageComponent: ExplorerImageComponent;
   onOpen: (restaurant: RestaurantSummary) => void;
   onSelect: (id: string) => void;
@@ -312,6 +323,11 @@ const RestaurantListItem = memo(function RestaurantListItem({
           <h2 className="truncate text-[0.98rem] font-bold tracking-[-0.03em] text-slate-900">
             {restaurant.name}
           </h2>
+          {distance !== null ? (
+            <p className="text-xs font-semibold text-[#2f6fed]">
+              현재 위치에서 {formatDistance(distance)}
+            </p>
+          ) : null}
           {restaurant.memo ? (
             <p className="line-clamp-2 whitespace-pre-line text-xs leading-5 text-slate-500">
               {restaurant.memo}
@@ -607,6 +623,21 @@ function MobileFilterModal({
   );
 }
 
+function getLocationErrorMessage(error: unknown) {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? Number(error.code)
+      : null;
+
+  if (code === 1)
+    return "위치 권한이 거부됐어요. 브라우저 설정에서 허용해 주세요.";
+  if (code === 2)
+    return "현재 위치를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.";
+  if (code === 3)
+    return "위치 확인이 오래 걸리고 있어요. 다시 시도해 주세요.";
+  return "현재 위치를 확인하지 못했어요. 다시 시도해 주세요.";
+}
+
 function RestaurantDetailStatus({
   restaurant,
   error,
@@ -682,6 +713,10 @@ export function RestaurantExplorer({
   const [pendingTags, setPendingTags] = useState<string[]>([]);
   const [tagPickerValue, setTagPickerValue] = useState(ALL_TAGS);
   const [visitFilter, setVisitFilter] = useState<VisitFilter>("all");
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
+  const [locationError, setLocationError] = useState("");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileListCollapsed, setIsMobileListCollapsed] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -776,31 +811,64 @@ export function RestaurantExplorer({
       ]
         .join(" ")
         .toLocaleLowerCase("ko-KR");
+      const nearbyMatches =
+        nearbyRadiusKm === null ||
+        (userLocation !== null &&
+          restaurant.latitude !== null &&
+          restaurant.longitude !== null &&
+          distanceInMeters(userLocation, {
+            latitude: restaurant.latitude,
+            longitude: restaurant.longitude,
+          }) <=
+            nearbyRadiusKm * 1000);
+
       return (
         (!normalizedSearch || searchableText.includes(normalizedSearch)) &&
         (region === ALL_REGION || location.region === region) &&
         (district === ALL_DISTRICTS || location.district === district) &&
-        matchesRestaurantTags(restaurant, selectedTags, visitFilter)
+        matchesRestaurantTags(restaurant, selectedTags, visitFilter) &&
+        nearbyMatches
       );
     });
   }, [
     district,
+    nearbyRadiusKm,
     region,
     restaurants,
     search,
     selectedTags,
+    userLocation,
     visitFilter,
   ]);
+
+  const restaurantDistances = useMemo(() => {
+    const distances = new Map<string, number>();
+    if (!userLocation) return distances;
+
+    restaurants.forEach((restaurant) => {
+      if (restaurant.latitude === null || restaurant.longitude === null) return;
+      distances.set(
+        restaurant.id,
+        distanceInMeters(userLocation, {
+          latitude: restaurant.latitude,
+          longitude: restaurant.longitude,
+        }),
+      );
+    });
+
+    return distances;
+  }, [restaurants, userLocation]);
 
   const recommendationCandidates = useMemo(
     () =>
       shuffle(
         filteredRestaurants,
-        `${tagSeed}-${recommendationSeed}-${search}-${region}-${district}-${selectedTags.join(",")}-${visitFilter}`,
+        `${tagSeed}-${recommendationSeed}-${search}-${region}-${district}-${selectedTags.join(",")}-${visitFilter}-${nearbyRadiusKm ?? "all"}`,
       ).slice(0, 5),
     [
       district,
       filteredRestaurants,
+      nearbyRadiusKm,
       recommendationSeed,
       region,
       search,
@@ -958,6 +1026,23 @@ export function RestaurantExplorer({
     setIsDetailLoading(false);
   }
 
+  async function requestUserLocation() {
+    setLocationError("");
+
+    setLocationStatus("locating");
+
+    try {
+      const location = await platform.getCurrentLocation();
+      setUserLocation(location);
+      setActiveRestaurantId(null);
+      setVisibleCount(LIST_BATCH_SIZE);
+      setLocationStatus("ready");
+    } catch (error) {
+      setLocationStatus("error");
+      setLocationError(getLocationErrorMessage(error));
+    }
+  }
+
   function resetFilters() {
     setSearch("");
     setSearchResetKey((key) => key + 1);
@@ -967,6 +1052,7 @@ export function RestaurantExplorer({
     setPendingTags([]);
     setTagPickerValue(ALL_TAGS);
     setVisitFilter("all");
+    setNearbyRadiusKm(null);
     setVisibleCount(LIST_BATCH_SIZE);
   }
 
@@ -1013,6 +1099,7 @@ export function RestaurantExplorer({
     district !== ALL_DISTRICTS ? district : "",
     selectedTags.length > 0 ? selectedTags.join(",") : "",
     visitFilter !== "all" ? visitFilter : "",
+    nearbyRadiusKm !== null ? String(nearbyRadiusKm) : "",
   ].filter(Boolean).length;
   const selectedIdForView =
     activeRestaurantId &&
@@ -1020,7 +1107,9 @@ export function RestaurantExplorer({
       (restaurant) => restaurant.id === activeRestaurantId,
     )
       ? activeRestaurantId
-      : (filteredRestaurants[0]?.id ?? null);
+      : userLocation
+        ? null
+        : (filteredRestaurants[0]?.id ?? null);
 
   useEffect(() => {
     if (!selectedIdForView) return;
@@ -1213,6 +1302,50 @@ export function RestaurantExplorer({
                 ))}
               </div>
 
+              {userLocation ? (
+                <div
+                  className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  aria-label="내 주변 맛집 거리 필터"
+                >
+                  <span className="shrink-0 px-1 text-[0.66rem] font-bold text-slate-400">
+                    내 주변
+                  </span>
+                  <button
+                    aria-pressed={nearbyRadiusKm === null}
+                    className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                      nearbyRadiusKm === null
+                        ? "bg-[#e3edff] text-[#2f6fed]"
+                        : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                    }`}
+                    onClick={() => {
+                      setNearbyRadiusKm(null);
+                      setVisibleCount(LIST_BATCH_SIZE);
+                    }}
+                    type="button"
+                  >
+                    전체
+                  </button>
+                  {NEARBY_RADIUS_OPTIONS.map((radius) => (
+                    <button
+                      aria-pressed={nearbyRadiusKm === radius}
+                      className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                        nearbyRadiusKm === radius
+                          ? "bg-[#e3edff] text-[#2f6fed]"
+                          : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      }`}
+                      key={radius}
+                      onClick={() => {
+                        setNearbyRadiusKm(radius);
+                        setVisibleCount(LIST_BATCH_SIZE);
+                      }}
+                      type="button"
+                    >
+                      {radius}km
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
               {region !== ALL_REGION && districts.length > 0 ? (
                 <div
                   className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -1300,6 +1433,7 @@ export function RestaurantExplorer({
               <div className="flex flex-col gap-2">
                 {visibleRestaurants.map((restaurant, index) => (
                   <RestaurantListItem
+                    distance={restaurantDistances.get(restaurant.id) ?? null}
                     imageComponent={imageComponent}
                     index={index}
                     isSelected={selectedIdForView === restaurant.id}
@@ -1370,6 +1504,8 @@ export function RestaurantExplorer({
             district={district}
             districts={districts}
             hasPendingTagChanges={hasPendingTagChanges}
+            nearbyRadiusKm={nearbyRadiusKm}
+            nearbyRadiusOptions={NEARBY_RADIUS_OPTIONS}
             onApplyTagFilter={applyTagFilter}
             onDistrictChange={(value) => {
               setDistrict(value);
@@ -1377,6 +1513,10 @@ export function RestaurantExplorer({
             }}
             onDistrictToggle={(value) => {
               setDistrict(district === value ? ALL_DISTRICTS : value);
+              setVisibleCount(LIST_BATCH_SIZE);
+            }}
+            onNearbyRadiusChange={(value) => {
+              setNearbyRadiusKm(value);
               setVisibleCount(LIST_BATCH_SIZE);
             }}
             onRegionChange={(value) => {
@@ -1399,6 +1539,7 @@ export function RestaurantExplorer({
             selectedTags={selectedTags}
             tagPickerValue={tagPickerValue}
             tags={tags}
+            userLocation={userLocation}
             visibleTags={visibleTags}
             visitFilter={visitFilter}
           />
@@ -1419,10 +1560,52 @@ export function RestaurantExplorer({
               onSelect={selectRestaurant}
               restaurants={filteredRestaurants}
               selectedId={selectedIdForView}
+              userLocation={userLocation}
             />
           </Suspense>
           <div className="absolute bottom-5 right-4 z-40 flex flex-col items-end gap-2 sm:right-5">
+            {locationError ? (
+              <p
+                className="max-w-[min(18rem,calc(100vw-2rem))] rounded-xl bg-slate-900/85 px-3 py-2 text-right text-xs font-semibold leading-5 text-white shadow-lg backdrop-blur"
+                role="alert"
+              >
+                {locationError}
+              </p>
+            ) : null}
             <div className="flex gap-2">
+              <button
+                aria-label="현재 위치 찾기"
+                className={`flex h-12 items-center gap-2 rounded-2xl border border-white/80 px-4 text-sm font-black shadow-xl backdrop-blur transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-wait disabled:opacity-60 ${
+                  locationStatus === "ready"
+                    ? "bg-[#e3edff]/95 text-[#2f6fed]"
+                    : "bg-white/95 text-slate-700"
+                }`}
+                disabled={locationStatus === "locating"}
+                onClick={() => void requestUserLocation()}
+                title={
+                  locationStatus === "ready"
+                    ? "현재 위치를 다시 확인"
+                    : "현재 위치 찾기"
+                }
+                type="button"
+              >
+                <LocateFixed
+                  className={
+                    locationStatus === "locating"
+                      ? "h-4 w-4 animate-pulse"
+                      : "h-4 w-4"
+                  }
+                  aria-hidden="true"
+                  strokeWidth={2.1}
+                />
+                <span className="hidden sm:inline">
+                  {locationStatus === "locating"
+                    ? "찾는 중..."
+                    : locationStatus === "ready"
+                      ? "내 위치"
+                      : "내 위치 찾기"}
+                </span>
+              </button>
               <button
                 aria-label="메뉴추천 열기"
                 className="flex h-12 items-center gap-2 rounded-2xl border border-white/80 bg-white/95 px-4 text-sm font-black text-[#2f6fed] shadow-xl backdrop-blur transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"

@@ -1,4 +1,9 @@
-import { openURL, share } from "@apps-in-toss/web-framework";
+import {
+  Accuracy,
+  getCurrentLocation,
+  openURL,
+  share,
+} from "@apps-in-toss/web-framework";
 
 import type { ExplorerPlatform } from "@/features/restaurant-explorer/model/platform";
 import { browserExplorerPlatform } from "@/features/restaurant-explorer/model/platform";
@@ -10,7 +15,23 @@ function isAppsInTossWebView() {
   );
 }
 
+async function getTossLocation() {
+  const { coords } = await getCurrentLocation({
+    accuracy: Accuracy.Balanced,
+  });
+
+  return {
+    accuracy: coords.accuracy,
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+  };
+}
+
 export const appsInTossPlatform: ExplorerPlatform = {
+  getCurrentLocation: () =>
+    isAppsInTossWebView()
+      ? getTossLocation()
+      : browserExplorerPlatform.getCurrentLocation(),
   openExternalUrl: (url) =>
     isAppsInTossWebView()
       ? openURL(url)

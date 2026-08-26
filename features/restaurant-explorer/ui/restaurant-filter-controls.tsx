@@ -1,5 +1,6 @@
 "use client";
 
+import type { UserLocation } from "@/shared/lib/geo";
 import {
   getVisitTag,
   type VisitFilter,
@@ -29,18 +30,22 @@ type RestaurantFilterControlsProps = {
   allTags: string;
   districts: string[];
   hasPendingTagChanges: boolean;
+  nearbyRadiusKm: number | null;
+  nearbyRadiusOptions: readonly number[];
   pendingTags: string[];
   region: string;
   regions: string[];
   selectedTags: string[];
   tagPickerValue: string;
   tags: string[];
+  userLocation: UserLocation | null;
   visibleTags: string[];
   visitFilter: VisitFilter;
   district: string;
   onApplyTagFilter: () => void;
   onDistrictChange: (value: string) => void;
   onDistrictToggle: (value: string) => void;
+  onNearbyRadiusChange: (value: number | null) => void;
   onRegionChange: (value: string) => void;
   onTagPickerChange: (value: string) => void;
   onTogglePendingTag: (tag: string) => void;
@@ -53,18 +58,22 @@ export function RestaurantFilterControls({
   allTags,
   districts,
   hasPendingTagChanges,
+  nearbyRadiusKm,
+  nearbyRadiusOptions,
   pendingTags,
   region,
   regions,
   selectedTags,
   tagPickerValue,
   tags,
+  userLocation,
   visibleTags,
   visitFilter,
   district,
   onApplyTagFilter,
   onDistrictChange,
   onDistrictToggle,
+  onNearbyRadiusChange,
   onRegionChange,
   onTagPickerChange,
   onTogglePendingTag,
@@ -171,6 +180,44 @@ export function RestaurantFilterControls({
           </button>
         ))}
       </div>
+
+      {userLocation ? (
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="주변 맛집 거리 필터"
+        >
+          <span className="shrink-0 px-1 text-[0.66rem] font-bold text-slate-400">
+            주변
+          </span>
+          <button
+            aria-pressed={nearbyRadiusKm === null}
+            className={`min-h-11 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition lg:min-h-0 ${
+              nearbyRadiusKm === null
+                ? "bg-[#e3edff] text-[#2f6fed]"
+                : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+            }`}
+            onClick={() => onNearbyRadiusChange(null)}
+            type="button"
+          >
+            전체
+          </button>
+          {nearbyRadiusOptions.map((radius) => (
+            <button
+              aria-pressed={nearbyRadiusKm === radius}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition lg:min-h-0 ${
+                nearbyRadiusKm === radius
+                  ? "bg-[#e3edff] text-[#2f6fed]"
+                  : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+              }`}
+              key={radius}
+              onClick={() => onNearbyRadiusChange(radius)}
+              type="button"
+            >
+              {radius}km
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {region !== allRegion && districts.length > 0 ? (
         <div
