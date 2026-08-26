@@ -161,7 +161,10 @@ export function RestaurantForm({
     setImageCandidates([]);
     setImageSearchError("");
     if (isConfigured) {
-      void searchNaverImages([place.name, address].filter(Boolean).join(" "));
+      void searchNaverImages(
+        [place.name, address].filter(Boolean).join(" "),
+        mode === "create" && form.imagePaths.length === 0,
+      );
     }
   }
 
@@ -251,7 +254,39 @@ export function RestaurantForm({
     setImagePreviews((previous) => previous.filter((_, imageIndex) => imageIndex !== index));
   }
 
-  async function searchNaverImages(searchQuery?: string) {
+  async function importFirstNaverThumbnail(candidates: NaverImageCandidate[]) {
+    if (!isStorageConfigured || candidates.length === 0) return;
+
+    setIsImportingImage(true);
+    let lastError = "";
+
+    try {
+      for (const candidate of candidates.slice(0, 3)) {
+        const result = await importImageFromNaver(candidate.thumbnailUrl);
+        if (!result.ok) {
+          lastError = result.error;
+          continue;
+        }
+
+        setForm((previous) => ({
+          ...previous,
+          imagePath: result.imagePath,
+          imagePaths: [result.imagePath],
+          imageSourceUrl: candidate.sourceUrl,
+          imageCredit: candidate.title,
+        }));
+        setImagePreviews([result.imageUrl]);
+        setSelectedNaverImageIds([candidate.id]);
+        return;
+      }
+
+      setImageSearchError(lastError || "대표 썸네일을 자동으로 저장하지 못했습니다. 다른 후보를 선택해 주세요.");
+    } finally {
+      setIsImportingImage(false);
+    }
+  }
+
+  async function searchNaverImages(searchQuery?: string, autoImportFirst = false) {
     setImageSearchError("");
 
     const query = searchQuery ?? [form.name.trim(), form.address.trim()].filter(Boolean).join(" ");
@@ -272,8 +307,14 @@ export function RestaurantForm({
         return;
       }
 
-      setImageCandidates(payload.items ?? []);
-      if (!payload.items?.length) setImageSearchError("이미지 후보가 없습니다. 가게 이름을 조금 바꿔 검색해 보세요.");
+      const candidates = payload.items ?? [];
+      setImageCandidates(candidates);
+      if (!candidates.length) {
+        setImageSearchError("이미지 후보가 없습니다. 가게 이름을 조금 바꿔 검색해 보세요.");
+        return;
+      }
+
+      if (autoImportFirst) await importFirstNaverThumbnail(candidates);
     } catch {
       setImageSearchError("이미지 검색 서버에 연결하지 못했습니다.");
     } finally {
@@ -428,7 +469,8 @@ export function RestaurantForm({
           <div className={`${isCompact ? "rounded-xl" : "rounded-2xl"} divide-y divide-slate-100 overflow-hidden border border-slate-200`}>
             {searchResults.map((place) => (
               <button
-                className={`${isCompact ? "px-3 py-3" : "px-4 py-4"} block w-full text-left transition hover:bg-[#f8faff]`}
+                className={`${isCompact ? "px-3 py-3" : "px-4 py-4"} block w-full text-left transition hover:bg-[#f8faff] disabled:cursor-wait disabled:opacity-60`}
+                disabled={isSearchingImages || isImportingImage}
                 key={place.id}
                 onClick={() => selectPlace(place)}
                 type="button"
@@ -599,7 +641,7 @@ export function RestaurantForm({
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div className="flex flex-col gap-1">
               <p className="text-sm font-bold text-slate-800">네이버 추천 이미지</p>
-              <p className="text-xs leading-5 text-slate-400">장소를 선택하면 자동으로 후보를 불러옵니다. 선택한 이미지는 내 Storage로 복사됩니다.</p>
+              <p className="text-xs leading-5 text-slate-400">등록 화면에서 장소를 선택하면 첫 번째 저장 가능한 썸네일을 자동으로 추가합니다. 다른 후보를 선택해 교체할 수도 있습니다.</p>
               <p className="text-[0.68rem] leading-5 text-amber-600">사용 전에 이미지 출처와 사용 권한을 확인해 주세요.</p>
             </div>
             <button
