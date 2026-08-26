@@ -14,7 +14,6 @@ import {
 import { renderToStaticMarkup } from "react-dom/server";
 import { MapPinned } from "lucide-react";
 import {
-  Circle,
   Container,
   Marker,
   NaverMap as ReactNaverMap,
@@ -25,7 +24,6 @@ import {
 
 import { getNaverMapClientId } from "@/shared/lib/config";
 import { categoryIcon } from "@/entities/restaurant/model/category-display";
-import type { UserLocation } from "@/shared/lib/geo";
 import type { RestaurantSummary } from "@/entities/restaurant/model/types";
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
@@ -35,7 +33,6 @@ export type RestaurantMapProps = {
   restaurants: RestaurantSummary[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  userLocation?: UserLocation | null;
 };
 
 type MapStatusCardProps = {
@@ -144,12 +141,6 @@ function markerPalette(category: string) {
 }
 
 type MarkerIcon = NonNullable<ComponentProps<typeof Marker>["icon"]>;
-
-const USER_LOCATION_ICON: MarkerIcon = {
-  anchor: { x: 16, y: 16 },
-  content: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#2f6fed" fill-opacity=".18"/><circle cx="16" cy="16" r="7" fill="#2f6fed" stroke="#ffffff" stroke-width="3"/></svg>`,
-  size: { height: 32, width: 32 },
-};
 
 function MapResizeObserver() {
   const map = useMap();
@@ -311,7 +302,6 @@ function MapContent({
   restaurants,
   selectedId,
   onSelect,
-  userLocation,
 }: RestaurantMapProps) {
   const navermaps = useNavermaps();
   const mappableRestaurants = useMemo(
@@ -330,13 +320,9 @@ function MapContent({
   );
   const focusedRestaurant =
     selectedRestaurant ??
-    (userLocation
-      ? null
-      : mappableRestaurants.length === 1
-        ? mappableRestaurants[0]
-        : null);
+    (mappableRestaurants.length === 1 ? mappableRestaurants[0] : null);
   const [showNameLabels, setShowNameLabels] = useState(
-    () => (focusedRestaurant ? 16 : userLocation ? 15 : 11) >= 18,
+    () => (focusedRestaurant ? 16 : 11) >= 18,
   );
   const handleZoomChanged = useCallback((nextZoom: number) => {
     const shouldShow = nextZoom >= 18;
@@ -351,13 +337,11 @@ function MapContent({
             lat: focusedRestaurant.latitude!,
             lng: focusedRestaurant.longitude!,
           }
-        : userLocation
-          ? { lat: userLocation.latitude, lng: userLocation.longitude }
-          : undefined,
-    [focusedRestaurant, userLocation],
+        : undefined,
+    [focusedRestaurant],
   );
   const bounds = useMemo(() => {
-    if (focusedRestaurant || userLocation || mappableRestaurants.length < 2)
+    if (focusedRestaurant || mappableRestaurants.length < 2)
       return undefined;
 
     const firstRestaurant = mappableRestaurants[0];
@@ -372,7 +356,7 @@ function MapContent({
       );
     });
     return nextBounds;
-  }, [focusedRestaurant, mappableRestaurants, navermaps, userLocation]);
+  }, [focusedRestaurant, mappableRestaurants, navermaps]);
 
   return (
     <ReactNaverMap
@@ -380,34 +364,11 @@ function MapContent({
       bounds={bounds}
       defaultCenter={SEOUL_CENTER}
       defaultZoom={11}
-      zoom={focusedRestaurant ? 16 : userLocation ? 15 : undefined}
+      zoom={focusedRestaurant ? 16 : undefined}
       onZoomChanged={handleZoomChanged}
       zoomControl
     >
       <MapResizeObserver />
-      {userLocation ? (
-        <>
-          <Circle
-            center={{ lat: userLocation.latitude, lng: userLocation.longitude }}
-            fillColor="#2f6fed"
-            fillOpacity={0.1}
-            radius={Math.min(Math.max(userLocation.accuracy, 30), 250)}
-            strokeColor="#2f6fed"
-            strokeOpacity={0.35}
-            strokeWeight={1}
-            zIndex={900}
-          />
-          <Marker
-            icon={USER_LOCATION_ICON}
-            position={{
-              lat: userLocation.latitude,
-              lng: userLocation.longitude,
-            }}
-            title="현재 위치"
-            zIndex={2000}
-          />
-        </>
-      ) : null}
       {mappableRestaurants.map((restaurant) => (
         <MappableMarker
           isSelected={restaurant.id === selectedId}
@@ -426,7 +387,6 @@ export function NaverMap({
   restaurants,
   selectedId,
   onSelect,
-  userLocation,
 }: RestaurantMapProps) {
   const mapClientId = providedMapClientId ?? getNaverMapClientId();
   const mappableCount = restaurants.filter(
@@ -453,7 +413,6 @@ export function NaverMap({
                 onSelect={onSelect}
                 restaurants={restaurants}
                 selectedId={selectedId}
-                userLocation={userLocation}
               />
             </Container>
           </NavermapsProvider>

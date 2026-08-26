@@ -12,7 +12,7 @@ app/                                      # Next.js route, layout, error, API ro
 entities/restaurant/
   model/                                  # Restaurant 타입, 필터, 지역·분류 규칙
   api/                                    # 맛집 조회·관리 데이터 접근 모듈
-shared/lib/                               # 설정, 상수, 지도·위치, Supabase·R2·Naver adapter
+shared/lib/                               # 설정, 상수, Supabase·R2·Naver adapter
 features/
   auth/                                   # 관리자 인증 UI와 server action
   naver-import/                           # 네이버 저장 리스트 가져오기 UI

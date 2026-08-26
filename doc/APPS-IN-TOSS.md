@@ -1,11 +1,11 @@
 # 앱인토스 WebView 배포
 
-`배고프면 진수에게`의 공개 맛집 화면을 앱인토스 WebView 미니앱으로 패키징하는 설정이다. 관리자 화면은 기존 Next.js/Vercel 웹사이트에 남고, 앱인토스에는 공개 목록·검색·필터·지도·GPS·메뉴 추천·상세 공유만 제공한다.
+`배고프면 진수에게`의 공개 맛집 화면을 앱인토스 WebView 미니앱으로 패키징하는 설정이다. 관리자 화면은 기존 Next.js/Vercel 웹사이트에 남고, 앱인토스에는 공개 목록·검색·필터·지도·메뉴 추천·상세 공유만 제공한다.
 
 ## 구조
 
 - `apps/in-toss/`: 앱인토스 전용 Vite 엔트리와 토스 브리지 어댑터
-- `apps-in-toss.config.ts`: 앱 이름 `hungry-jinsu`, 위치 권한, WebView 설정
+- `apps-in-toss.config.ts`: 앱 이름 `hungry-jinsu`, WebView 설정
 - `app/api/restaurants/route.ts`: 앱인토스가 호출하는 공개 목록 API
 - `app/api/restaurants/[id]/route.ts`: 공개 상세 API
 - `shared/lib/http/cors.ts`: 앱인토스 도메인과 로컬 개발 origin용 CORS
@@ -54,14 +54,11 @@ npm run toss:deploy
 
 1. 목록 API가 로딩 화면 뒤에 정상적으로 표시되는지
 2. 지도 타일과 맛집 마커가 표시되는지
-3. 위치 권한을 허용했을 때 주변 3km 필터가 적용되는지
-4. 상세 화면의 공유와 Naver 지도 외부 이동이 토스 브리지로 동작하는지
-5. 권한 거부·API 오류·공유 취소 시 화면이 멈추지 않는지
+3. 상세 화면의 공유와 Naver 지도 외부 이동이 토스 브리지로 동작하는지
+4. API 오류·공유 취소 시 화면이 멈추지 않는지
 
 ## 참고
 
 - [앱인토스 WebView 시작하기](https://developers-apps-in-toss.toss.im/tutorials/webview.html)
-- [앱인토스 WebView 권한](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B6%8C%ED%95%9C/permission.html)
-- [앱인토스 위치 정보](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EC%9C%84%EC%B9%98%20%EC%A0%95%EB%B3%B4/Location.html)
 - [앱인토스 공유](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B3%B5%EC%9C%A0/share.html)
 - [앱인토스 외부 URL 열기](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%ED%99%94%EB%A9%B4%20%EC%9D%B4%EB%8F%99/openURL.html)
