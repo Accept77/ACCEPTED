@@ -374,7 +374,9 @@ function RestaurantDetail({
   platform: ExplorerPlatform;
   onClose: () => void;
 }) {
-  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">("idle");
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">(
+    "idle",
+  );
   const locationLabel = restaurantLocationLabel(restaurant);
   const visitTag = getVisitTag(restaurant.hasVisited);
   const isOfficialGallery =
@@ -395,7 +397,9 @@ function RestaurantDetail({
         : "relative aspect-[1.7/1]";
 
   async function handleShare() {
-    const shareText = [restaurant.name, restaurant.address].filter(Boolean).join("\n");
+    const shareText = [restaurant.name, restaurant.address]
+      .filter(Boolean)
+      .join("\n");
 
     setShareStatus("idle");
 
@@ -495,15 +499,15 @@ function RestaurantDetail({
                 onClick={(event) => {
                   if (!platform.openExternalUrl) return;
                   event.preventDefault();
-                  void platform.openExternalUrl(restaurant.imageSourceUrl!).catch(
-                    () => {
+                  void platform
+                    .openExternalUrl(restaurant.imageSourceUrl!)
+                    .catch(() => {
                       window.open(
                         restaurant.imageSourceUrl!,
                         "_blank",
                         "noopener,noreferrer",
                       );
-                    },
-                  );
+                    });
                 }}
                 rel="noreferrer"
                 target="_blank"
@@ -538,7 +542,11 @@ function RestaurantDetail({
                 if (!platform.openExternalUrl) return;
                 event.preventDefault();
                 void platform.openExternalUrl(restaurant.naverUrl).catch(() => {
-                  window.open(restaurant.naverUrl, "_blank", "noopener,noreferrer");
+                  window.open(
+                    restaurant.naverUrl,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
                 });
               }}
               rel="noreferrer"
@@ -559,11 +567,19 @@ function RestaurantDetail({
               type="button"
             >
               <Share2 aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
-              {shareStatus === "copied" ? "복사됨" : shareStatus === "error" ? "복사 실패" : "공유하기"}
+              {shareStatus === "copied"
+                ? "복사됨"
+                : shareStatus === "error"
+                  ? "복사 실패"
+                  : "공유하기"}
             </button>
           </div>
           <p aria-live="polite" className="sr-only">
-            {shareStatus === "copied" ? "식당 정보와 네이버 지도 링크를 복사했습니다." : shareStatus === "error" ? "공유 링크를 복사하지 못했습니다." : ""}
+            {shareStatus === "copied"
+              ? "식당 정보와 네이버 지도 링크를 복사했습니다."
+              : shareStatus === "error"
+                ? "공유 링크를 복사하지 못했습니다."
+                : ""}
           </p>
         </div>
       </div>
@@ -633,8 +649,7 @@ function getLocationErrorMessage(error: unknown) {
     return "위치 권한이 거부됐어요. 브라우저 설정에서 허용해 주세요.";
   if (code === 2)
     return "현재 위치를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.";
-  if (code === 3)
-    return "위치 확인이 오래 걸리고 있어요. 다시 시도해 주세요.";
+  if (code === 3) return "위치 확인이 오래 걸리고 있어요. 다시 시도해 주세요.";
   return "현재 위치를 확인하지 못했어요. 다시 시도해 주세요.";
 }
 
@@ -969,54 +984,57 @@ export function RestaurantExplorer({
     [filteredRestaurants],
   );
 
-  const openRestaurant = useCallback(async (restaurant: RestaurantSummary) => {
-    const requestId = detailRequestIdRef.current + 1;
-    detailRequestIdRef.current = requestId;
-    setActiveRestaurantId(restaurant.id);
-    setSelectedRestaurantSummary(restaurant);
-    setSelectedRestaurant(null);
-    setDetailError("");
+  const openRestaurant = useCallback(
+    async (restaurant: RestaurantSummary) => {
+      const requestId = detailRequestIdRef.current + 1;
+      detailRequestIdRef.current = requestId;
+      setActiveRestaurantId(restaurant.id);
+      setSelectedRestaurantSummary(restaurant);
+      setSelectedRestaurant(null);
+      setDetailError("");
 
-    const cachedRestaurant = detailCacheRef.current.get(restaurant.id);
-    if (cachedRestaurant) {
-      setSelectedRestaurant(cachedRestaurant);
-      setIsDetailLoading(false);
-      return;
-    }
-
-    setIsDetailLoading(true);
-
-    try {
-      const response = await fetch(
-        getExplorerApiUrl(
-          apiBaseUrl,
-          `/api/restaurants/${encodeURIComponent(restaurant.id)}`,
-        ),
-        {
-          cache: "no-store",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("상세 정보를 불러오지 못했습니다.");
+      const cachedRestaurant = detailCacheRef.current.get(restaurant.id);
+      if (cachedRestaurant) {
+        setSelectedRestaurant(cachedRestaurant);
+        setIsDetailLoading(false);
+        return;
       }
 
-      const detail = (await response.json()) as Restaurant;
-      if (detailRequestIdRef.current !== requestId) return;
+      setIsDetailLoading(true);
 
-      detailCacheRef.current.set(detail.id, detail);
-      setSelectedRestaurant(detail);
-    } catch (error) {
-      if (detailRequestIdRef.current !== requestId) return;
-      setDetailError(
-        error instanceof Error
-          ? error.message
-          : "상세 정보를 불러오지 못했습니다.",
-      );
-    } finally {
-      if (detailRequestIdRef.current === requestId) setIsDetailLoading(false);
-    }
-  }, [apiBaseUrl]);
+      try {
+        const response = await fetch(
+          getExplorerApiUrl(
+            apiBaseUrl,
+            `/api/restaurants/${encodeURIComponent(restaurant.id)}`,
+          ),
+          {
+            cache: "no-store",
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("상세 정보를 불러오지 못했습니다.");
+        }
+
+        const detail = (await response.json()) as Restaurant;
+        if (detailRequestIdRef.current !== requestId) return;
+
+        detailCacheRef.current.set(detail.id, detail);
+        setSelectedRestaurant(detail);
+      } catch (error) {
+        if (detailRequestIdRef.current !== requestId) return;
+        setDetailError(
+          error instanceof Error
+            ? error.message
+            : "상세 정보를 불러오지 못했습니다.",
+        );
+      } finally {
+        if (detailRequestIdRef.current === requestId) setIsDetailLoading(false);
+      }
+    },
+    [apiBaseUrl],
+  );
 
   function closeRestaurant() {
     detailRequestIdRef.current += 1;
@@ -1289,7 +1307,7 @@ export function RestaurantExplorer({
                 ].map(([value, label]) => (
                   <button
                     aria-pressed={visitFilter === value}
-                    className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${getVisitFilterClass(value as VisitFilter, visitFilter === value)}`}
+                    className={`lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${getVisitFilterClass(value as VisitFilter, visitFilter === value)}`}
                     key={value}
                     onClick={() => {
                       setVisitFilter(value as VisitFilter);
@@ -1312,7 +1330,7 @@ export function RestaurantExplorer({
                   </span>
                   <button
                     aria-pressed={nearbyRadiusKm === null}
-                    className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                    className={`lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
                       nearbyRadiusKm === null
                         ? "bg-[#e3edff] text-[#2f6fed]"
                         : "bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -1328,7 +1346,7 @@ export function RestaurantExplorer({
                   {NEARBY_RADIUS_OPTIONS.map((radius) => (
                     <button
                       aria-pressed={nearbyRadiusKm === radius}
-                      className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                      className={`lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
                         nearbyRadiusKm === radius
                           ? "bg-[#e3edff] text-[#2f6fed]"
                           : "bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -1354,7 +1372,7 @@ export function RestaurantExplorer({
                   {districts.slice(0, 8).map((item) => (
                     <button
                       aria-pressed={district === item}
-                      className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                      className={`lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
                         district === item
                           ? "bg-[#e3edff] text-[#2f6fed]"
                           : "bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -1377,7 +1395,7 @@ export function RestaurantExplorer({
                   {visibleTags.slice(0, 8).map((item) => (
                     <button
                       aria-pressed={pendingTags.includes(item)}
-                      className={`min-h-11 lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
+                      className={`lg:min-h-0 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition ${
                         pendingTags.includes(item)
                           ? "bg-[#e3edff] text-[#2f6fed]"
                           : "bg-slate-50 text-slate-500 hover:bg-slate-100"
