@@ -191,7 +191,7 @@ export function RestaurantFilterControls({
           </span>
           <button
             aria-pressed={nearbyRadiusKm === null}
-            className={`min-h-11 shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition lg:min-h-0 ${
+            className={`shrink-0 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold transition lg:min-h-0 ${
               nearbyRadiusKm === null
                 ? "bg-[#e3edff] text-[#2f6fed]"
                 : "bg-slate-50 text-slate-500 hover:bg-slate-100"
