@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  normalizeLatitude,
+  normalizeLongitude,
+} from "@/entities/restaurant/model/coordinates";
 import { getNaverApiConfig } from "@/shared/lib/config";
 import { getAdminStatus } from "@/shared/lib/supabase/auth";
 import type { NaverPlaceSearchResult } from "@/entities/restaurant/model/types";
@@ -81,8 +85,8 @@ export async function GET(request: NextRequest) {
         roadAddress: item.roadAddress ?? "",
         sourceUrl,
         mapUrl: createMapUrl(name, address),
-        latitude: item.mapy ? Number(item.mapy) : null,
-        longitude: item.mapx ? Number(item.mapx) : null,
+        latitude: normalizeLatitude(item.mapy),
+        longitude: normalizeLongitude(item.mapx),
       };
     });
 

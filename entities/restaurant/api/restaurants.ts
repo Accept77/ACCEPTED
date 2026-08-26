@@ -1,4 +1,8 @@
 import { demoRestaurants } from "@/entities/restaurant/model/demo-data";
+import {
+  normalizeLatitude,
+  normalizeLongitude,
+} from "@/entities/restaurant/model/coordinates";
 import { isSupabaseConfigured } from "@/shared/lib/config";
 import { getR2PublicUrl } from "@/shared/lib/r2/server";
 import { createClient } from "@/shared/lib/supabase/server";
@@ -45,8 +49,8 @@ function toRestaurant(row: RestaurantRow, imagePaths: string[], imageUrls: strin
     imageCredit: row.image_credit,
     imageCandidates: row.image_candidates ?? [],
     naverUrl: row.naver_url,
-    latitude: row.latitude,
-    longitude: row.longitude,
+    latitude: normalizeLatitude(row.latitude),
+    longitude: normalizeLongitude(row.longitude),
     sortOrder: row.sort_order,
     isVisible: row.is_visible,
     createdAt: row.created_at,
@@ -83,8 +87,8 @@ function toRestaurantSummary(row: PublicRestaurantRow): RestaurantSummary {
     tags: row.tags ?? [],
     hasVisited: row.has_visited,
     imageUrl: imagePath ? getR2PublicUrl(imagePath) : null,
-    latitude: row.latitude,
-    longitude: row.longitude,
+    latitude: normalizeLatitude(row.latitude),
+    longitude: normalizeLongitude(row.longitude),
   };
 }
 
