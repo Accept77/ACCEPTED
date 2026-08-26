@@ -7,7 +7,7 @@ import { MapPinned, UtensilsCrossed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { deleteRestaurant, setRestaurantVisibility } from "@/features/restaurant-management/api/restaurants";
+import { deleteRestaurant, retryMissingRestaurantImages, setRestaurantVisibility } from "@/features/restaurant-management/api/restaurants";
 import { signOutAdmin } from "@/features/auth/api/actions";
 import type { AdminRestaurantFilters } from "@/entities/restaurant/api/restaurants";
 import { getVisitTag } from "@/entities/restaurant/model/restaurant-filters";
@@ -172,6 +172,8 @@ export function AdminDashboard({
 }: AdminDashboardProps) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState("");
+  const [isRecoveringImages, startImageRecovery] = useTransition();
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -181,6 +183,22 @@ export function AdminDashboard({
       setIsSigningOut(false);
       router.refresh();
     }
+  }
+
+  function handleImageRecovery() {
+    setRecoveryMessage("");
+    startImageRecovery(async () => {
+      try {
+        const result = await retryMissingRestaurantImages();
+        const failedMessage = result.failedCount > 0 ? ` · 저장 실패 ${result.failedCount}곳` : "";
+        setRecoveryMessage(
+          `${result.checkedCount}곳 확인 · 사진 ${result.imageImportedCount}개 저장 · 후보 없음/지원 불가 ${result.imageMissingCount}곳${failedMessage}`,
+        );
+        router.refresh();
+      } catch (error) {
+        setRecoveryMessage(error instanceof Error ? error.message : "누락 이미지를 보완하지 못했습니다.");
+      }
+    });
   }
 
   return (
@@ -256,11 +274,25 @@ export function AdminDashboard({
               </button>
             </Form>
 
-            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-3 py-2 text-xs sm:px-4">
-              <p className="font-semibold text-slate-500">현재 조건 <span className="font-black text-[#2f6fed]">{filteredCount.toLocaleString("ko-KR")}</span>곳</p>
-              {filters.query || filters.visit !== "all" || filters.visibility !== "all" || filters.category ? (
-                <Link className="font-bold text-slate-400 transition hover:text-slate-700" href="/admin">필터 초기화</Link>
-              ) : null}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-xs sm:px-4">
+              <p className="min-w-0 truncate font-semibold text-slate-500" title={recoveryMessage || undefined}>
+                {recoveryMessage || <>현재 조건 <span className="font-black text-[#2f6fed]">{filteredCount.toLocaleString("ko-KR")}</span>곳</>}
+              </p>
+              <div className="flex shrink-0 items-center gap-3">
+                {missingImageCount > 0 ? (
+                  <button
+                    className="font-bold text-amber-600 transition hover:text-amber-700 disabled:cursor-not-allowed disabled:text-slate-300"
+                    disabled={isRecoveringImages}
+                    onClick={handleImageRecovery}
+                    type="button"
+                  >
+                    {isRecoveringImages ? "사진 보완 중..." : "누락 사진 자동 보완"}
+                  </button>
+                ) : null}
+                {filters.query || filters.visit !== "all" || filters.visibility !== "all" || filters.category ? (
+                  <Link className="font-bold text-slate-400 transition hover:text-slate-700" href="/admin">필터 초기화</Link>
+                ) : null}
+              </div>
             </div>
 
             <div className="safe-area-bottom min-h-0 flex-1 overflow-y-auto">

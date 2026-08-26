@@ -17,6 +17,7 @@ const inputClass =
   "h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8eaff4] focus:ring-4 focus:ring-[#edf3ff]";
 const compactInputClass = inputClass.replace("h-13", "h-11").replace("rounded-2xl", "rounded-xl").replace("px-4", "px-3");
 const MAX_IMAGES = 3;
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const emptyForm: RestaurantInput = {
@@ -181,8 +182,8 @@ export function RestaurantForm({
       setFormError("JPG, PNG, WEBP 이미지 파일만 업로드할 수 있어요.");
       return;
     }
-    if (selectedFiles.some((file) => file.size > 5 * 1024 * 1024)) {
-      setFormError("이미지는 장당 5MB 이하로 업로드해 주세요.");
+    if (selectedFiles.some((file) => file.size > MAX_IMAGE_SIZE)) {
+      setFormError("이미지는 장당 10MB 이하로 업로드해 주세요.");
       return;
     }
 
@@ -290,6 +291,11 @@ export function RestaurantForm({
 
     try {
       const result = await importImageFromNaver(candidate.thumbnailUrl);
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
+
       setForm((previous) => {
         const imagePaths = [...previous.imagePaths, result.imagePath].slice(0, MAX_IMAGES);
         return {
@@ -320,6 +326,11 @@ export function RestaurantForm({
 
     try {
       const result = await importImageFromNaver(imageUrl);
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
+
       setForm((previous) => ({
         ...previous,
         imagePath: [...previous.imagePaths, result.imagePath][0] ?? null,
@@ -561,7 +572,7 @@ export function RestaurantForm({
               {isUploading ? "업로드 중..." : "이미지 추가"}
               <input accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={isUploading || isImportingImage || !isStorageConfigured || imagePreviews.length >= MAX_IMAGES} multiple onChange={uploadImage} type="file" />
             </label>
-            <p className="text-xs leading-5 text-slate-400">이미지는 최대 3장, 장당 5MB까지 등록할 수 있습니다.</p>
+            <p className="text-xs leading-5 text-slate-400">이미지는 최대 3장, 장당 10MB까지 등록할 수 있습니다.</p>
           </div>
         </div>
 

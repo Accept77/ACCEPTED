@@ -6,6 +6,10 @@ import { requireAdmin } from "@/shared/lib/supabase/auth";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+export type NaverImageImportResult =
+  | { ok: true; imagePath: string; imageUrl: string }
+  | { ok: false; error: string };
+
 function extensionForContentType(contentType: string) {
   if (contentType === "image/png") return "png";
   if (contentType === "image/webp") return "webp";
@@ -46,7 +50,16 @@ export async function deleteUploadedImages(imagePaths: string[]) {
   await deleteR2Objects(paths);
 }
 
-export async function importImageFromNaver(thumbnailUrl: string) {
+export async function importImageFromNaver(thumbnailUrl: string): Promise<NaverImageImportResult> {
   await requireAdmin();
-  return storeNaverImage(thumbnailUrl);
+
+  try {
+    const result = await storeNaverImage(thumbnailUrl);
+    return { ok: true, ...result };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error && error.message ? error.message : "네이버 이미지를 저장하지 못했습니다.",
+    };
+  }
 }

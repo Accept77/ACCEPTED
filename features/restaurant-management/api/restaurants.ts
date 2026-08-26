@@ -13,6 +13,7 @@ const MAX_IMPORT_COUNT = 5000;
 const DUPLICATE_CHECK_BATCH_SIZE = 50;
 const DUPLICATE_CHECK_CONCURRENCY = 4;
 const IMAGE_IMPORT_CONCURRENCY = 4;
+const MISSING_IMAGE_RETRY_LIMIT = 100;
 const OFFICIAL_IMAGE_CREDIT = "네이버 장소 등록 이미지";
 
 function cleanText(value: unknown, maxLength: number) {
@@ -486,6 +487,85 @@ export async function refreshRestaurantPhotos(places: NaverSavedPlace[]) {
   revalidatePath("/admin/import");
 
   return { updatedCount, imageImportedCount, imageMissingCount };
+}
+
+export async function retryMissingRestaurantImages() {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("restaurants")
+    .select("id, naver_url, image_candidates")
+    .is("image_path", null)
+    .filter("image_paths", "eq", "{}")
+    .limit(MISSING_IMAGE_RETRY_LIMIT);
+
+  if (error) {
+    throw new Error(`사진 보완 대상을 확인하지 못했습니다. ${error.message}`);
+  }
+
+  const targets = data ?? [];
+  let imageImportedCount = 0;
+  let imageMissingCount = 0;
+  let failedCount = 0;
+
+  for (let index = 0; index < targets.length; index += IMAGE_IMPORT_CONCURRENCY) {
+    const batch = targets.slice(index, index + IMAGE_IMPORT_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(async (target) => {
+        const candidates = cleanImageCandidates(target.image_candidates);
+        let storedImage: Awaited<ReturnType<typeof storeNaverImage>> | null = null;
+
+        for (const candidate of candidates) {
+          try {
+            storedImage = await storeNaverImage(candidate);
+            break;
+          } catch {
+            // Keep trying candidates that are still available and supported.
+          }
+        }
+
+        if (!storedImage) return "missing" as const;
+
+        const { data: updatedRows, error: updateError } = await supabase
+          .from("restaurants")
+          .update({
+            image_path: storedImage.imagePath,
+            image_paths: [storedImage.imagePath],
+            image_source_url: cleanText(target.naver_url, 500),
+            image_credit: OFFICIAL_IMAGE_CREDIT,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", target.id)
+          .is("image_path", null)
+          .filter("image_paths", "eq", "{}")
+          .select("id");
+
+        if (updateError || !updatedRows?.length) {
+          await deleteR2Objects([storedImage.imagePath]);
+          return updateError ? "failed" as const : "skipped" as const;
+        }
+
+        return "imported" as const;
+      }),
+    );
+
+    for (const result of results) {
+      if (result === "imported") imageImportedCount += 1;
+      if (result === "missing") imageMissingCount += 1;
+      if (result === "failed") failedCount += 1;
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+
+  return {
+    checkedCount: targets.length,
+    imageImportedCount,
+    imageMissingCount,
+    failedCount,
+  };
 }
 
 export async function updateRestaurant(id: string, input: RestaurantInput) {

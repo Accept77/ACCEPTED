@@ -1,7 +1,7 @@
 import { getR2PublicUrl, uploadR2Object } from "@/shared/lib/r2/server";
 import { isTrustedNaverImageUrl } from "@/shared/lib/naver-images";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function extensionForContentType(contentType: string) {
@@ -37,12 +37,12 @@ export async function storeNaverImage(sourceUrl: string) {
     throw new Error("JPG, PNG, WEBP 형식의 이미지만 저장할 수 있습니다.");
   }
   if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_SIZE) {
-    throw new Error("이미지는 5MB 이하만 저장할 수 있습니다.");
+    throw new Error("이미지는 10MB 이하만 저장할 수 있습니다.");
   }
 
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_SIZE) {
-    throw new Error("이미지는 5MB 이하만 저장할 수 있습니다.");
+    throw new Error("이미지는 10MB 이하만 저장할 수 있습니다.");
   }
 
   const imagePath = `naver-imports/${crypto.randomUUID()}.${extensionForContentType(contentType)}`;
