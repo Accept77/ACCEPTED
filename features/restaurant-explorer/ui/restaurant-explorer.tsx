@@ -14,6 +14,7 @@ import {
   lazy,
   memo,
   Suspense,
+  type MouseEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -88,6 +89,18 @@ function getVisitTagClass(hasVisited: boolean) {
   return hasVisited
     ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
     : "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200";
+}
+
+function handleExternalLinkClick(
+  event: MouseEvent<HTMLAnchorElement>,
+  url: string,
+  openExternalUrl: ExplorerPlatform["openExternalUrl"],
+) {
+  if (!openExternalUrl) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  void openExternalUrl(url).catch(() => undefined);
 }
 
 function getVisitFilterClass(value: VisitFilter, isSelected: boolean) {
@@ -496,19 +509,13 @@ function RestaurantDetail({
               <a
                 className="underline underline-offset-2 transition hover:text-slate-600"
                 href={restaurant.imageSourceUrl}
-                onClick={(event) => {
-                  if (!platform.openExternalUrl) return;
-                  event.preventDefault();
-                  void platform
-                    .openExternalUrl(restaurant.imageSourceUrl!)
-                    .catch(() => {
-                      window.open(
-                        restaurant.imageSourceUrl!,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
-                    });
-                }}
+                onClick={(event) =>
+                  handleExternalLinkClick(
+                    event,
+                    restaurant.imageSourceUrl!,
+                    platform.openExternalUrl,
+                  )
+                }
                 rel="noreferrer"
                 target="_blank"
               >
@@ -538,17 +545,13 @@ function RestaurantDetail({
             <a
               className="flex h-13 min-w-0 items-center justify-center gap-2 rounded-2xl bg-[#2f6fed] px-4 text-sm font-bold text-white transition hover:bg-[#255ac8]"
               href={restaurant.naverUrl}
-              onClick={(event) => {
-                if (!platform.openExternalUrl) return;
-                event.preventDefault();
-                void platform.openExternalUrl(restaurant.naverUrl).catch(() => {
-                  window.open(
-                    restaurant.naverUrl,
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
-                });
-              }}
+              onClick={(event) =>
+                handleExternalLinkClick(
+                  event,
+                  restaurant.naverUrl,
+                  platform.openExternalUrl,
+                )
+              }
               rel="noreferrer"
               target="_blank"
             >

@@ -85,7 +85,6 @@ export const browserExplorerPlatform: ExplorerPlatform = {
     return "copied";
   },
   openExternalUrl: async (url) => {
-    const openedWindow = window.open(url, "_blank", "noopener,noreferrer");
-    if (!openedWindow) window.location.assign(url);
+    window.open(url, "_blank", "noopener,noreferrer");
   },
 };
